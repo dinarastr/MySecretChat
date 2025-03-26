@@ -107,7 +107,7 @@ class BluetoothControllerImpl @Inject constructor(
     }
 
     private fun updatePairedDevices() {
-        if (ActivityCompat.checkSelfPermission(
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(
                 context,
                 Manifest.permission.BLUETOOTH_CONNECT
             ) != PackageManager.PERMISSION_GRANTED

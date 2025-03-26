@@ -48,8 +48,7 @@ val ALL_BLE_PERMISSIONS = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         Manifest.permission.BLUETOOTH_CONNECT,
         Manifest.permission.BLUETOOTH_SCAN,
     )
-}
-else {
+} else {
     arrayOf(
         Manifest.permission.BLUETOOTH_ADMIN,
         Manifest.permission.BLUETOOTH,
