@@ -5,7 +5,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import ru.yandexpraktikum.blechat.presentation.chat.ChatScreen
-import ru.yandexpraktikum.blechat.presentation.deviceslist.DeviceListScreen
+import ru.yandexpraktikum.blechat.presentation.deviceslist.PairedDevicesListScreen
+import ru.yandexpraktikum.blechat.presentation.scanner.ScannedDevicesListScreen
 
 /**
  * TODO("Add documentation")
@@ -14,12 +15,26 @@ import ru.yandexpraktikum.blechat.presentation.deviceslist.DeviceListScreen
 fun NavGraph(navController: NavHostController) {
     NavHost(
         navController = navController,
-        startDestination = Screen.DeviceList.route
+        startDestination = Screen.PairedDeviceList.route
     ) {
-        composable(Screen.DeviceList.route) {
-            DeviceListScreen(
+        composable(Screen.PairedDeviceList.route) {
+            PairedDevicesListScreen(
                 onDeviceClick = { deviceAddress ->
                     navController.navigate(Screen.Chat.createRoute(deviceAddress))
+                },
+                onAddNewDeviceClick = {
+                    navController.navigate(Screen.ScannedDeviceList.route)
+                }
+            )
+        }
+
+        composable(Screen.ScannedDeviceList.route) {
+            ScannedDevicesListScreen(
+                onDeviceClick = { deviceAddress ->
+                    navController.navigate(Screen.Chat.createRoute(deviceAddress))
+                },
+                onNavigateUp = {
+                    navController.navigateUp()
                 }
             )
         }

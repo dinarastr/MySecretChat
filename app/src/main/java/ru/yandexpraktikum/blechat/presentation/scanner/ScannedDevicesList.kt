@@ -1,4 +1,4 @@
-package ru.yandexpraktikum.blechat.presentation.deviceslist
+package ru.yandexpraktikum.blechat.presentation.scanner
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
@@ -14,20 +14,34 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import ru.yandexpraktikum.blechat.R
 import ru.yandexpraktikum.blechat.domain.model.BluetoothDevice
+
+/**
+ * TODO("Add documentation")
+ */
 
 val ALL_BLE_PERMISSIONS = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
     arrayOf(
@@ -43,14 +57,16 @@ else {
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DeviceListScreen(
+fun ScannedDevicesListScreen(
+    onNavigateUp: () -> Unit,
     onDeviceClick: (String) -> Unit,
-    viewModel: DeviceListViewModel = hiltViewModel()
+    viewModel: ScannedDevicesViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
-    
+
     val enableBluetoothLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -65,7 +81,7 @@ fun DeviceListScreen(
         contract = ActivityResultContracts.RequestPermission()
     ) {
         if (it) {
-            viewModel.onEvent(DeviceListEvent.ToggleAdvertising)
+            viewModel.onEvent(ScannedDevicesEvent.ToggleAdvertising)
         } else {
             Toast.makeText(context, "Failed to enable advertising", Toast.LENGTH_SHORT).show()
         }
@@ -79,66 +95,84 @@ fun DeviceListScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Scanned Devices") },
+                navigationIcon = {
+                    IconButton(
+                        onClick = onNavigateUp
+                    ){
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_ADVERTISE) != PackageManager.PERMISSION_GRANTED) {
+                                advertiseLauncher.launch(Manifest.permission.BLUETOOTH_ADVERTISE)
+                            } else {
+                                viewModel.onEvent(ScannedDevicesEvent.ToggleAdvertising)
+                            }
+                        }
+                    ){
+                        Icon(
+                            painter = painterResource(R.drawable.radio_ic),
+                            tint = if (state.isAdvertising) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            contentDescription = "Turn on/off advertising"
+                        )
+                    }
+                }
+            )
+        },
 
-        Text(
-            text = "Error: ${state.errorMessage}",
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-        
-        Text(
-            text = "Paired Devices",
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-        
-        LazyColumn(
-            modifier = Modifier.weight(1f)
+    ) { paddingValues ->
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
         ) {
-            items(state.scannedDevices) { device ->
-                DeviceItem(
-                    device = device,
-                    onClick = { onDeviceClick(device.address) }
+            LazyColumn(
+                modifier = Modifier.weight(1f)
+            ) {
+                items(state.scannedDevices) { device ->
+                    DeviceItem(
+                        device = device,
+                        onClick = { onDeviceClick(device.address) }
+                    )
+                }
+            }
+
+            if (state.isScanning) {
+                Text(
+                    text = "Scanning for devices...",
+                    modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
-        }
-        
-        if (state.isScanning) {
-            Text(
-                text = "Scanning for devices...",
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-        }
 
-        if (state.isAdvertising) {
-            Text(
-                text = "Advertising for devices...",
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-        }
-
-        GrantPermissionsButton(onPermissionGranted = {
-            viewModel.onEvent(DeviceListEvent.ToggleScan)
-        }, state = state)
-        Button(onClick = {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_ADVERTISE) != PackageManager.PERMISSION_GRANTED) {
-                advertiseLauncher.launch(Manifest.permission.BLUETOOTH_ADVERTISE)
-            } else {
-                viewModel.onEvent(DeviceListEvent.ToggleAdvertising)
+            if (state.isAdvertising) {
+                Text(
+                    text = "Advertising for devices...",
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
             }
-        }) {
-            Text(if (state.isAdvertising) "Stop Advertising" else "Advertise for Devices")
+
+            GrantPermissionsButton(onPermissionGranted = {
+                viewModel.onEvent(ScannedDevicesEvent.ToggleScan)
+            }, state = state)
         }
     }
+
+
 }
 
 @Composable
-fun GrantPermissionsButton(onPermissionGranted: () -> Unit, state: DeviceListState) {
+fun GrantPermissionsButton(onPermissionGranted: () -> Unit, state: ScannedDevicesState) {
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { granted ->

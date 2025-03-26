@@ -1,4 +1,4 @@
-package ru.yandexpraktikum.blechat.presentation.deviceslist
+package ru.yandexpraktikum.blechat.presentation.scanner
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -14,21 +14,23 @@ import ru.yandexpraktikum.blechat.domain.bluetooth.BluetoothController
 import ru.yandexpraktikum.blechat.domain.model.ConnectionState
 import javax.inject.Inject
 
+/**
+ * TODO("Add documentation")
+ */
 @HiltViewModel
-class DeviceListViewModel @Inject constructor(
+class ScannedDevicesViewModel @Inject constructor(
     private val bluetoothController: BluetoothController
-) : ViewModel() {
+): ViewModel() {
 
-    private val _state = MutableStateFlow(DeviceListState())
+    private val _state = MutableStateFlow(ScannedDevicesState())
+
     val state = combine(
         bluetoothController.scannedDevices,
-        bluetoothController.pairedDevices,
         bluetoothController.isBluetoothEnabled,
         _state
-    ) { scannedDevices, pairedDevices, isEnabled, state ->
+    ) { scannedDevices, isEnabled, state ->
         state.copy(
             scannedDevices = scannedDevices,
-            pairedDevices = pairedDevices,
             isBluetoothEnabled = isEnabled,
             isScanning = state.isScanning,
             isAdvertising = state.isAdvertising
@@ -36,12 +38,12 @@ class DeviceListViewModel @Inject constructor(
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
-        DeviceListState()
+        ScannedDevicesState()
     )
 
-    fun onEvent(event: DeviceListEvent) {
+    fun onEvent(event: ScannedDevicesEvent) {
         when (event) {
-            is DeviceListEvent.ToggleAdvertising -> {
+            is ScannedDevicesEvent.ToggleAdvertising -> {
                 if (!state.value.isBluetoothEnabled) {
                     _state.update { it.copy(errorMessage = "Bluetooth is not enabled") }
                     return
@@ -53,7 +55,8 @@ class DeviceListViewModel @Inject constructor(
                     bluetoothController.stopAdvertising()
                 }
             }
-            is DeviceListEvent.ToggleScan -> {
+
+            is ScannedDevicesEvent.ToggleScan -> {
                 if (!state.value.isBluetoothEnabled) {
                     _state.update { it.copy(errorMessage = "Bluetooth is not enabled") }
                     return
@@ -65,7 +68,8 @@ class DeviceListViewModel @Inject constructor(
                     bluetoothController.stopScan()
                 }
             }
-            is DeviceListEvent.ConnectToDevice -> {
+
+            is ScannedDevicesEvent.ConnectToDevice -> {
                 viewModelScope.launch {
                     bluetoothController.connectToDevice(event.device)
                         .collect { connectionState ->
@@ -73,18 +77,17 @@ class DeviceListViewModel @Inject constructor(
                                 is ConnectionState.Connected -> {
                                     // Handle successful connection
                                 }
+
                                 is ConnectionState.Disconnected -> {
-                                    _state.update { 
+                                    _state.update {
                                         it.copy(errorMessage = "Device disconnected")
                                     }
                                 }
+
                                 else -> Unit
                             }
                         }
                 }
-            }
-            is DeviceListEvent.DismissError -> {
-                _state.update { it.copy(errorMessage = null) }
             }
         }
     }
@@ -99,7 +102,7 @@ class DeviceListViewModel @Inject constructor(
                     bluetoothController.stopScan()
                 }
             } catch (e: Exception) {
-                _state.update { 
+                _state.update {
                     it.copy(
                         isScanning = false,
                         errorMessage = "Failed to scan: ${e.localizedMessage}"
