@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,6 +32,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -142,7 +144,13 @@ fun ScannedDevicesListScreen(
                 items(state.scannedDevices) { device ->
                     DeviceItem(
                         device = device,
-                        onClick = { onDeviceClick(device.address) }
+                        onClick = {
+                            if (device.isConnected) {
+                                onDeviceClick(device.address)
+                            } else {
+                                viewModel.onEvent(ScannedDevicesEvent.ConnectToDevice(device))
+                            }
+                        }
                     )
                 }
             }
@@ -166,8 +174,6 @@ fun ScannedDevicesListScreen(
             }, state = state)
         }
     }
-
-
 }
 
 @Composable
@@ -214,6 +220,9 @@ private fun DeviceItem(
                 text = device.address,
                 style = MaterialTheme.typography.bodyMedium
             )
+            if (device.isConnected) {
+                Text("Connected", color = Color.Green)
+            }
         }
     }
 }

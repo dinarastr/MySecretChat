@@ -1,5 +1,6 @@
 package ru.yandexpraktikum.blechat.presentation.scanner
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -75,15 +76,14 @@ class ScannedDevicesViewModel @Inject constructor(
                         .collect { connectionState ->
                             when (connectionState) {
                                 is ConnectionState.Connected -> {
-                                    // Handle successful connection
+                                    Log.i("ScannedDevicesViewModel", "Connected")
                                 }
-
                                 is ConnectionState.Disconnected -> {
+                                    Log.i("ScannedDevicesViewModel", "Disconnected")
                                     _state.update {
                                         it.copy(errorMessage = "Device disconnected")
                                     }
                                 }
-
                                 else -> Unit
                             }
                         }

@@ -284,6 +284,13 @@ class BluetoothControllerImpl @Inject constructor(
                 when (newState) {
                     BluetoothProfile.STATE_CONNECTED -> {
                         gatt.discoverServices()
+                        _scannedDevices.update { devices ->
+                            devices.map {
+                                if (it.address == gatt.device.address) {
+                                    it.copy(isConnected = true)
+                                } else it
+                            }
+                        }
                         _isConnected.value = true
                     }
 
