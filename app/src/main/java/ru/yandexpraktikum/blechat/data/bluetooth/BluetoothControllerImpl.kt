@@ -82,10 +82,6 @@ class BluetoothControllerImpl @Inject constructor(
     override val scannedDevices: StateFlow<List<BluetoothDevice>>
         get() = _scannedDevices.asStateFlow()
 
-    private val _pairedDevices = MutableStateFlow<List<BluetoothDevice>>(emptyList())
-    override val pairedDevices: StateFlow<List<BluetoothDevice>>
-        get() = _pairedDevices.asStateFlow()
-
     private val _errors = MutableSharedFlow<String>()
     override val errors: SharedFlow<String>
         get() = _errors.asSharedFlow()
@@ -97,32 +93,10 @@ class BluetoothControllerImpl @Inject constructor(
     private fun initializeBluetoothState() {
         try {
             _isBluetoothEnabled.value = bluetoothAdapter?.isEnabled == true
-            if (_isBluetoothEnabled.value) {
-                updatePairedDevices()
-            }
         } catch (e: Exception) {
             viewModelScope.launch {
                 _errors.emit("Failed to initialize Bluetooth: ${e.localizedMessage}")
             }
-        }
-    }
-
-    private fun updatePairedDevices() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(
-                context,
-                Manifest.permission.BLUETOOTH_CONNECT
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            return
-        }
-        bluetoothAdapter?.bondedDevices?.map { device ->
-            Log.i("devices", device.toString())
-            BluetoothDevice(
-                name = device.name,
-                address = device.address
-            )
-        }?.also { devices ->
-            _pairedDevices.update { devices }
         }
     }
 

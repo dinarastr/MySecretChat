@@ -37,7 +37,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import ru.yandexpraktikum.blechat.R
 import ru.yandexpraktikum.blechat.domain.model.BluetoothDevice
 
 /**
