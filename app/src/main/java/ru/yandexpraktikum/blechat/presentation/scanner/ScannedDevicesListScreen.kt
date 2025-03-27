@@ -33,13 +33,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import ru.yandexpraktikum.blechat.domain.model.BluetoothDevice
-import android.bluetooth.BluetoothDevice as IncomingBluetoothDevice
-
+import ru.yandexpraktikum.blechat.domain.model.ScannedBluetoothDevice
 
 /**
  * TODO("Add documentation")
@@ -62,7 +59,7 @@ val ALL_BLE_PERMISSIONS = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
 @Composable
 fun ScannedDevicesListScreen(
     onNavigateUp: () -> Unit,
-    onDeviceClick: (String) -> Unit,
+    onDeviceClick: (String, Boolean) -> Unit,
     viewModel: ScannedDevicesViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
@@ -129,7 +126,7 @@ fun ScannedDevicesListScreen(
                         ConnectedDeviceItem(
                             device = device,
                             onClick = {
-                                //viewModel.onEvent(ScannedDevicesEvent.ConnectToDevice(device))
+                                onDeviceClick(device.address, true)
                             })
                     }
                 } else {
@@ -138,7 +135,7 @@ fun ScannedDevicesListScreen(
                             device = device,
                             onClick = {
                                 if (device.isConnected) {
-                                    onDeviceClick(device.address)
+                                    onDeviceClick(device.address, false)
                                 } else {
                                     viewModel.onEvent(ScannedDevicesEvent.ConnectToDevice(device))
                                 }
@@ -204,7 +201,7 @@ fun GrantPermissionsButton(onPermissionGranted: () -> Unit, state: ScannedDevice
 
 @Composable
 private fun DeviceItem(
-    device: BluetoothDevice,
+    device: ScannedBluetoothDevice,
     onClick: () -> Unit
 ) {
     Card(
@@ -235,7 +232,7 @@ private fun DeviceItem(
 
 @Composable
 private fun ConnectedDeviceItem(
-    device: IncomingBluetoothDevice,
+    device: ScannedBluetoothDevice,
     onClick: () -> Unit
 ) {
     Card(

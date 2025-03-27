@@ -1,4 +1,4 @@
-package ru.yandexpraktikum.blechat.presentation.chat
+package ru.yandexpraktikum.blechat.presentation.chats.outcomingchat
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,8 +9,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.yandexpraktikum.blechat.domain.bluetooth.BluetoothController
-import ru.yandexpraktikum.blechat.domain.model.BluetoothDevice
 import ru.yandexpraktikum.blechat.domain.model.Message
+import ru.yandexpraktikum.blechat.domain.model.ScannedBluetoothDevice
+import ru.yandexpraktikum.blechat.presentation.chats.ChatEvent
+import ru.yandexpraktikum.blechat.presentation.chats.ChatState
 import javax.inject.Inject
 
 @HiltViewModel
@@ -27,7 +29,7 @@ class ChatViewModel @Inject constructor(
 
     fun initializeChat(deviceAddress: String) {
         viewModelScope.launch {
-            val device = BluetoothDevice(
+            val device = ScannedBluetoothDevice(
                 name = deviceAddress, // You might want to get the actual name from paired devices
                 address = deviceAddress
             )
@@ -42,6 +44,18 @@ class ChatViewModel @Inject constructor(
 
     fun onEvent(event: ChatEvent) {
         when (event) {
+            is ChatEvent.LoadMessages -> {
+                viewModelScope.launch {
+                    bluetoothController.scannedDevices.collect { devices ->
+                        val device = devices.find { it.address == event.address }
+                        _state.update { it.copy(
+                            connectedDevice = device,
+                            isConnected = device != null,
+                            messages = device?.messages ?: emptyList())
+                        }
+                    }
+                }
+            }
             is ChatEvent.SendMessage -> {
                 viewModelScope.launch {
                     val message = Message(

@@ -1,4 +1,4 @@
-package ru.yandexpraktikum.blechat.presentation.chat
+package ru.yandexpraktikum.blechat.presentation.chats.incomingchat
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,12 +12,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -33,21 +30,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import ru.yandexpraktikum.blechat.domain.model.Message
+import ru.yandexpraktikum.blechat.presentation.chats.ChatEvent
+import ru.yandexpraktikum.blechat.presentation.chats.outcomingchat.ChatViewModel
+import ru.yandexpraktikum.blechat.presentation.chats.outcomingchat.MessageItem
+
+/**
+ * TODO("Add documentation")
+ */
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatScreen(
+fun IncomingChatScreen(
     deviceAddress: String,
     onNavigateUp: () -> Unit,
-    viewModel: ChatViewModel = hiltViewModel()
+    viewModel: IncomingChatViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
     var messageText by remember { mutableStateOf("") }
 
-    LaunchedEffect(deviceAddress) {
+    LaunchedEffect(state.messages) {
         // Initialize chat with the connected device
-        viewModel.initializeChat(deviceAddress)
+        viewModel.onEvent(ChatEvent.LoadMessages(deviceAddress))
     }
 
     Scaffold(
@@ -101,15 +104,17 @@ fun ChatScreen(
                         modifier = Modifier.weight(1f),
                         placeholder = { Text("Type a message") }
                     )
-                    
+
                     Spacer(modifier = Modifier.width(8.dp))
-                    
+
                     Button(
                         onClick = {
-                            viewModel.onEvent(ChatEvent.SendMessage(
-                                messageText,
-                                address = deviceAddress
-                            ))
+                            viewModel.onEvent(
+                                ChatEvent.SendMessage(
+                                    messageText,
+                                    address = deviceAddress
+                                )
+                            )
                             messageText = ""
                         },
                         enabled = messageText.isNotBlank() && state.connectedDevice != null
@@ -120,29 +125,5 @@ fun ChatScreen(
             }
         }
     }
-}
 
-@Composable
-fun MessageItem(
-    message: Message,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = if (message.isFromLocalUser) 
-                MaterialTheme.colorScheme.primaryContainer
-            else 
-                MaterialTheme.colorScheme.secondaryContainer
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(8.dp)
-        ) {
-            Text(
-                text = message.text,
-                style = MaterialTheme.typography.bodyLarge
-            )
-        }
-    }
 }

@@ -33,12 +33,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.yandexpraktikum.blechat.domain.bluetooth.BluetoothController
-import ru.yandexpraktikum.blechat.domain.model.BluetoothDevice
 import ru.yandexpraktikum.blechat.domain.model.ConnectionState
+import ru.yandexpraktikum.blechat.domain.model.Message
+import ru.yandexpraktikum.blechat.domain.model.ScannedBluetoothDevice
 import java.nio.charset.Charset
 import java.util.UUID
 import javax.inject.Inject
-import android.bluetooth.BluetoothDevice as IncomingBluetoothDevice
 
 
 /**
@@ -80,12 +80,12 @@ class BluetoothControllerImpl @Inject constructor(
     override val isConnected: StateFlow<Boolean>
         get() = _isConnected.asStateFlow()
 
-    private val _scannedDevices = MutableStateFlow<List<BluetoothDevice>>(emptyList())
-    override val scannedDevices: StateFlow<List<BluetoothDevice>>
+    private val _scannedDevices = MutableStateFlow<List<ScannedBluetoothDevice>>(emptyList())
+    override val scannedDevices: StateFlow<List<ScannedBluetoothDevice>>
         get() = _scannedDevices.asStateFlow()
 
-    private val _connectedDevices = MutableStateFlow<List<IncomingBluetoothDevice>>(emptyList())
-    override val connectedDevices: StateFlow<List<IncomingBluetoothDevice>>
+    private val _connectedDevices = MutableStateFlow<List<ScannedBluetoothDevice>>(emptyList())
+    override val connectedDevices: StateFlow<List<ScannedBluetoothDevice>>
         get() = _connectedDevices.asStateFlow()
 
     private val _errors = MutableSharedFlow<String>()
@@ -109,7 +109,7 @@ class BluetoothControllerImpl @Inject constructor(
     private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             val device = result.device
-            val bluetoothDevice = BluetoothDevice(
+            val bluetoothDevice = ScannedBluetoothDevice(
                 name = device.name,
                 address = device.address
             )
@@ -321,11 +321,12 @@ class BluetoothControllerImpl @Inject constructor(
                         _isConnected.value = true
                         _connectedDevices.update { devices ->
                             if (devices.none { it.address == device?.address } && device != null) {
-                                devices + device
+                                devices + ScannedBluetoothDevice(
+                                    name = device.name,
+                                    address = device.address
+                                )
                             } else devices
                         }
-
-                        Log.i("BLE", "Connected: ${device?.name}")
                     }
                     BluetoothProfile.STATE_DISCONNECTED -> {
                         _isConnected.value = false
@@ -348,9 +349,17 @@ class BluetoothControllerImpl @Inject constructor(
                     // Handle received message here
                     viewModelScope.launch {
                         message?.let {
-                            Log.i("received", it)
-                            // Emit the received message to your UI or message handler
-                            // You might want to add a messages flow to handle this
+                            _connectedDevices.update { devices ->
+                                devices.map {
+                                    if (it.address == device?.address) {
+                                        it.copy(messages = it.messages + Message(
+                                            text = message,
+                                            senderAddress = device.address,
+                                            isFromLocalUser = false
+                                        ))
+                                    } else it
+                                }
+                            }
                         }
                     }
                 }
@@ -396,7 +405,7 @@ class BluetoothControllerImpl @Inject constructor(
         }
     }
 
-    override fun connectToDevice(device: BluetoothDevice): Flow<ConnectionState> {
+    override fun connectToDevice(device: ScannedBluetoothDevice): Flow<ConnectionState> {
         viewModelScope.launch {
             _connectionState.emit(ConnectionState.Connecting)
         }

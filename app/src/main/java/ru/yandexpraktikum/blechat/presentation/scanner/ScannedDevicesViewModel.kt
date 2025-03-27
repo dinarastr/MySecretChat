@@ -58,7 +58,6 @@ class ScannedDevicesViewModel @Inject constructor(
                     bluetoothController.stopServer()
                 }
             }
-
             is ScannedDevicesEvent.ToggleScan -> {
                 if (!state.value.isBluetoothEnabled) {
                     _state.update { it.copy(errorMessage = "Bluetooth is not enabled") }

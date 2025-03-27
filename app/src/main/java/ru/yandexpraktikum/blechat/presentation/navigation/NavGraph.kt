@@ -4,7 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import ru.yandexpraktikum.blechat.presentation.chat.ChatScreen
+import ru.yandexpraktikum.blechat.presentation.chats.incomingchat.IncomingChatScreen
+import ru.yandexpraktikum.blechat.presentation.chats.outcomingchat.ChatScreen
 import ru.yandexpraktikum.blechat.presentation.scanner.ScannedDevicesListScreen
 
 /**
@@ -18,12 +19,28 @@ fun NavGraph(navController: NavHostController) {
     ) {
         composable(Screen.ScannedDeviceList.route) {
             ScannedDevicesListScreen(
-                onDeviceClick = { deviceAddress ->
-                    navController.navigate(Screen.Chat.createRoute(deviceAddress))
+                onDeviceClick = { deviceAddress, isIncomingChat ->
+                    if (isIncomingChat) {
+                       navController.navigate(Screen.IncomingChat.createRoute(deviceAddress))
+                    } else {
+                        navController.navigate(Screen.Chat.createRoute(deviceAddress))
+                    }
                 },
                 onNavigateUp = {
                     navController.navigateUp()
                 }
+            )
+        }
+
+        composable(
+            route = Screen.IncomingChat.route
+        ) { backStackEntry ->
+            val deviceAddress = backStackEntry.arguments?.getString("deviceAddress")
+            requireNotNull(deviceAddress) { "Device address cannot be null" }
+
+            IncomingChatScreen(
+                deviceAddress = deviceAddress,
+                onNavigateUp = { navController.navigateUp() }
             )
         }
 
