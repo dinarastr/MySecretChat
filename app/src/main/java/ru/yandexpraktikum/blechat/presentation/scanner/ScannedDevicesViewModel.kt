@@ -53,7 +53,7 @@ class ScannedDevicesViewModel @Inject constructor(
                 if (_state.value.isAdvertising) {
                     startAdvertising()
                 } else {
-                    bluetoothController.stopAdvertising()
+                    bluetoothController.stopServer()
                 }
             }
 
@@ -113,15 +113,11 @@ class ScannedDevicesViewModel @Inject constructor(
         }
     }
 
+
     private fun startAdvertising() {
         viewModelScope.launch {
             try {
-                bluetoothController.startAdvertising()
-                delay(SCAN_PERIOD)
-                if (_state.value.isAdvertising) {
-                    _state.update { it.copy(isAdvertising = false) }
-                    bluetoothController.stopAdvertising()
-                }
+                bluetoothController.startServer()
             } catch (e: Exception) {
                 _state.update {
                     it.copy(
@@ -129,7 +125,7 @@ class ScannedDevicesViewModel @Inject constructor(
                         errorMessage = "Failed to advertise: ${e.localizedMessage}"
                     )
                 }
-                bluetoothController.stopAdvertising()
+                bluetoothController.stopServer()
             }
         }
     }

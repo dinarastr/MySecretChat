@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -109,23 +108,6 @@ fun ScannedDevicesListScreen(
                             contentDescription = "Back"
                         )
                     }
-                },
-                actions = {
-                    IconButton(
-                        onClick = {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_ADVERTISE) != PackageManager.PERMISSION_GRANTED) {
-                                advertiseLauncher.launch(Manifest.permission.BLUETOOTH_ADVERTISE)
-                            } else {
-                                viewModel.onEvent(ScannedDevicesEvent.ToggleAdvertising)
-                            }
-                        }
-                    ){
-                        Icon(
-                            painter = painterResource(R.drawable.radio_ic),
-                            tint = if (state.isAdvertising) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                            contentDescription = "Turn on/off advertising"
-                        )
-                    }
                 }
             )
         },
@@ -172,6 +154,16 @@ fun ScannedDevicesListScreen(
             GrantPermissionsButton(onPermissionGranted = {
                 viewModel.onEvent(ScannedDevicesEvent.ToggleScan)
             }, state = state)
+            Button(onClick = {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_ADVERTISE) != PackageManager.PERMISSION_GRANTED) {
+                    advertiseLauncher.launch(Manifest.permission.BLUETOOTH_ADVERTISE)
+                } else {
+                    viewModel.onEvent(ScannedDevicesEvent.ToggleAdvertising)
+                }
+            }) {
+                Text(if (state.isScanning) "Stop Server" else "Start server")
+            }
+
         }
     }
 }

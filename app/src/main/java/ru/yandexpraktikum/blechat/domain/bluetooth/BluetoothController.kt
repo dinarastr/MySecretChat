@@ -19,7 +19,9 @@ interface BluetoothController {
     fun startAdvertising()
     fun stopAdvertising()
     
-    fun startServer(): Flow<ConnectionState>
+    fun startServer()
+    fun stopServer()
+
     fun connectToDevice(device: BluetoothDevice): Flow<ConnectionState>
     
     suspend fun sendMessage(message: String): Boolean

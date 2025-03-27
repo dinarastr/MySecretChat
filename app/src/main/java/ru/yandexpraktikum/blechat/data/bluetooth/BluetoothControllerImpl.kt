@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattServer
 import android.bluetooth.BluetoothGattServerCallback
+import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.AdvertiseCallback
@@ -295,6 +296,13 @@ class BluetoothControllerImpl @Inject constructor(
                     }
 
                     BluetoothProfile.STATE_DISCONNECTED -> {
+                        _scannedDevices.update { devices ->
+                            devices.map {
+                                if (it.address == gatt.device.address) {
+                                    it.copy(isConnected = false)
+                                } else it
+                            }
+                        }
                         _isConnected.value = false
                         closeConnection()
                     }
@@ -309,13 +317,18 @@ class BluetoothControllerImpl @Inject constructor(
         ) {
             if (characteristic.uuid == messageCharUUID) {
                 val message = String(value, Charset.defaultCharset())
-                // Handle received message
+                Log.i("sent", message)
             }
         }
     }
 
-    override fun startServer(): Flow<ConnectionState> = flow {
-        emit(ConnectionState.Connecting)
+    override fun startServer() {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
 
         gattServerCallback = object : BluetoothGattServerCallback() {
             override fun onConnectionStateChange(
@@ -326,16 +339,10 @@ class BluetoothControllerImpl @Inject constructor(
                 when (newState) {
                     BluetoothProfile.STATE_CONNECTED -> {
                         _isConnected.value = true
-                        viewModelScope.launch {
-                            _connectionState.emit(ConnectionState.Connected)
-                        }
+                        Log.i("BLE", "Connected: ${device?.name}")
                     }
-
                     BluetoothProfile.STATE_DISCONNECTED -> {
                         _isConnected.value = false
-                        viewModelScope.launch {
-                            _connectionState.emit(ConnectionState.Disconnected)
-                        }
                     }
                 }
             }
@@ -352,11 +359,55 @@ class BluetoothControllerImpl @Inject constructor(
                 if (characteristic?.uuid == messageCharUUID) {
                     gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null)
                     val message = value?.let { String(it, Charset.defaultCharset()) }
-                    // Handle received message
+                    // Handle received message here
+                    viewModelScope.launch {
+                        message?.let {
+                            Log.i("received", it)
+                            // Emit the received message to your UI or message handler
+                            // You might want to add a messages flow to handle this
+                        }
+                    }
                 }
             }
         }
 
+        gattServer = bluetoothManager?.openGattServer(context, gattServerCallback)
+
+        // Create and add the GATT service
+        val service = BluetoothGattService(serviceUUID, BluetoothGattService.SERVICE_TYPE_PRIMARY)
+        val characteristic = BluetoothGattCharacteristic(
+            messageCharUUID,
+            BluetoothGattCharacteristic.PROPERTY_READ or
+                    BluetoothGattCharacteristic.PROPERTY_WRITE or
+                    BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+            BluetoothGattCharacteristic.PERMISSION_READ or
+                    BluetoothGattCharacteristic.PERMISSION_WRITE
+        )
+
+        service.addCharacteristic(characteristic)
+        gattServer?.addService(service)
+
+        // Start advertising to make the server discoverable
+        startAdvertising()
+    }
+
+    override fun stopServer() {
+        try {
+            stopAdvertising()
+            gattServer?.close()
+            gattServer = null
+            gattServerCallback = null
+            _isConnected.value = false
+            viewModelScope.launch {
+                _connectionState.emit(ConnectionState.Disconnected)
+            }
+            Log.d("BLE", "Server stopped successfully")
+        } catch (e: Exception) {
+            Log.e("BLE", "Failed to stop server", e)
+            viewModelScope.launch {
+                _errors.emit("Failed to stop server: ${e.localizedMessage}")
+            }
+        }
     }
 
     override fun connectToDevice(device: BluetoothDevice): Flow<ConnectionState> {
