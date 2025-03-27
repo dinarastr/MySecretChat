@@ -67,10 +67,6 @@ class BluetoothControllerImpl @Inject constructor(
         bluetoothAdapter?.bluetoothLeAdvertiser
     }
 
-
-
-    private val serviceUuid = UUID.fromString("79141d83-a45a-4063-8cb5-8a34ac38e3c7")
-
     private val _isBluetoothEnabled = MutableStateFlow(false)
     override val isBluetoothEnabled: StateFlow<Boolean>
         get() = _isBluetoothEnabled.asStateFlow()
