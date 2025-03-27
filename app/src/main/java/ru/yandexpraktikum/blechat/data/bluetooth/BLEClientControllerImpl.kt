@@ -202,9 +202,6 @@ class BLEClientControllerImpl @Inject constructor(
                         }
                     }
                 }
-                Log.i("BLE", "Received message: $message")
-            } else {
-                Log.i("BLE", "Received message for unknown characteristic")
             }
         }
 
@@ -231,9 +228,6 @@ class BLEClientControllerImpl @Inject constructor(
                         }
                     }
                 }
-                Log.i("BLE", "Received message: $message")
-            } else {
-                Log.i("BLE", "Received message for unknown characteristic")
             }
         }
     }
