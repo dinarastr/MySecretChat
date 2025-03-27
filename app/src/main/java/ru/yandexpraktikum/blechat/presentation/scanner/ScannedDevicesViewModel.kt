@@ -26,11 +26,13 @@ class ScannedDevicesViewModel @Inject constructor(
     private val _state = MutableStateFlow(ScannedDevicesState())
 
     val state = combine(
+        bluetoothController.connectedDevices,
         bluetoothController.scannedDevices,
         bluetoothController.isBluetoothEnabled,
         _state
-    ) { scannedDevices, isEnabled, state ->
+    ) { connectedDevices, scannedDevices, isEnabled, state ->
         state.copy(
+            connectedDevices = connectedDevices,
             scannedDevices = scannedDevices,
             isBluetoothEnabled = isEnabled,
             isScanning = state.isScanning,

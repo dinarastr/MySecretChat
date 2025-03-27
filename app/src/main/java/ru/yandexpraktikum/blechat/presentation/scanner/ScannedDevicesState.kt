@@ -1,8 +1,11 @@
 package ru.yandexpraktikum.blechat.presentation.scanner
 
 import ru.yandexpraktikum.blechat.domain.model.BluetoothDevice
+import android.bluetooth.BluetoothDevice as IncomingBluetoothDevice
+
 
 data class ScannedDevicesState(
+    val connectedDevices: List<IncomingBluetoothDevice> = emptyList(),
     val scannedDevices: List<BluetoothDevice> = emptyList(),
     val isBluetoothEnabled: Boolean = false,
     val errorMessage: String? = null,

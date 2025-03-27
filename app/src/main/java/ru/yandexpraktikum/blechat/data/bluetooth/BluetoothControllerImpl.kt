@@ -30,7 +30,6 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.yandexpraktikum.blechat.domain.bluetooth.BluetoothController
@@ -39,6 +38,8 @@ import ru.yandexpraktikum.blechat.domain.model.ConnectionState
 import java.nio.charset.Charset
 import java.util.UUID
 import javax.inject.Inject
+import android.bluetooth.BluetoothDevice as IncomingBluetoothDevice
+
 
 /**
  * TODO("Add documentation")
@@ -57,7 +58,6 @@ class BluetoothControllerImpl @Inject constructor(
         bluetoothManager?.adapter
     }
 
-
     private val bleScanner by lazy {
         bluetoothAdapter?.bluetoothLeScanner
     }
@@ -65,6 +65,8 @@ class BluetoothControllerImpl @Inject constructor(
     private val bluetoothLeAdvertiser by lazy {
         bluetoothAdapter?.bluetoothLeAdvertiser
     }
+
+
 
     private val serviceUuid = UUID.fromString("79141d83-a45a-4063-8cb5-8a34ac38e3c7")
 
@@ -81,6 +83,10 @@ class BluetoothControllerImpl @Inject constructor(
     private val _scannedDevices = MutableStateFlow<List<BluetoothDevice>>(emptyList())
     override val scannedDevices: StateFlow<List<BluetoothDevice>>
         get() = _scannedDevices.asStateFlow()
+
+    private val _connectedDevices = MutableStateFlow<List<IncomingBluetoothDevice>>(emptyList())
+    override val connectedDevices: StateFlow<List<IncomingBluetoothDevice>>
+        get() = _connectedDevices.asStateFlow()
 
     private val _errors = MutableSharedFlow<String>()
     override val errors: SharedFlow<String>
@@ -313,6 +319,12 @@ class BluetoothControllerImpl @Inject constructor(
                 when (newState) {
                     BluetoothProfile.STATE_CONNECTED -> {
                         _isConnected.value = true
+                        _connectedDevices.update { devices ->
+                            if (devices.none { it.address == device?.address } && device != null) {
+                                devices + device
+                            } else devices
+                        }
+
                         Log.i("BLE", "Connected: ${device?.name}")
                     }
                     BluetoothProfile.STATE_DISCONNECTED -> {

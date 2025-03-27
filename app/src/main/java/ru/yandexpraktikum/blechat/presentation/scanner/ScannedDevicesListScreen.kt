@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import ru.yandexpraktikum.blechat.domain.model.BluetoothDevice
+import android.bluetooth.BluetoothDevice as IncomingBluetoothDevice
+
 
 /**
  * TODO("Add documentation")
@@ -101,7 +103,7 @@ fun ScannedDevicesListScreen(
                 navigationIcon = {
                     IconButton(
                         onClick = onNavigateUp
-                    ){
+                    ) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back"
@@ -111,7 +113,7 @@ fun ScannedDevicesListScreen(
             )
         },
 
-    ) { paddingValues ->
+        ) { paddingValues ->
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -122,17 +124,27 @@ fun ScannedDevicesListScreen(
             LazyColumn(
                 modifier = Modifier.weight(1f)
             ) {
-                items(state.scannedDevices) { device ->
-                    DeviceItem(
-                        device = device,
-                        onClick = {
-                            if (device.isConnected) {
-                                onDeviceClick(device.address)
-                            } else {
-                                viewModel.onEvent(ScannedDevicesEvent.ConnectToDevice(device))
+                if (state.connectedDevices.isNotEmpty()) {
+                    items(state.connectedDevices) { device ->
+                        ConnectedDeviceItem(
+                            device = device,
+                            onClick = {
+                                //viewModel.onEvent(ScannedDevicesEvent.ConnectToDevice(device))
+                            })
+                    }
+                } else {
+                    items(state.scannedDevices) { device ->
+                        DeviceItem(
+                            device = device,
+                            onClick = {
+                                if (device.isConnected) {
+                                    onDeviceClick(device.address)
+                                } else {
+                                    viewModel.onEvent(ScannedDevicesEvent.ConnectToDevice(device))
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
 
@@ -154,7 +166,11 @@ fun ScannedDevicesListScreen(
                 viewModel.onEvent(ScannedDevicesEvent.ToggleScan)
             }, state = state)
             Button(onClick = {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_ADVERTISE) != PackageManager.PERMISSION_GRANTED) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.BLUETOOTH_ADVERTISE
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
                     advertiseLauncher.launch(Manifest.permission.BLUETOOTH_ADVERTISE)
                 } else {
                     viewModel.onEvent(ScannedDevicesEvent.ToggleAdvertising)
@@ -175,8 +191,7 @@ fun GrantPermissionsButton(onPermissionGranted: () -> Unit, state: ScannedDevice
         if (granted.values.all { it }) {
             // User has granted all permissions
             onPermissionGranted()
-        }
-        else {
+        } else {
             // TODO: handle potential rejection in the usual way
         }
     }
@@ -214,6 +229,35 @@ private fun DeviceItem(
             if (device.isConnected) {
                 Text("Connected", color = Color.Green)
             }
+        }
+    }
+}
+
+@Composable
+private fun ConnectedDeviceItem(
+    device: IncomingBluetoothDevice,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        onClick = onClick
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+        ) {
+            Text(
+                text = device.name ?: "Unknown Device",
+                style = MaterialTheme.typography.bodyLarge
+            )
+            Text(
+                text = device.address,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text("Connected", color = Color.Green)
         }
     }
 }
