@@ -5,7 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import ru.yandexpraktikum.blechat.presentation.chats.incomingchat.IncomingChatScreen
-import ru.yandexpraktikum.blechat.presentation.chats.outcomingchat.ChatScreen
+import ru.yandexpraktikum.blechat.presentation.chats.outcomingchat.OutcomingChatScreen
 import ru.yandexpraktikum.blechat.presentation.scanner.ScannedDevicesListScreen
 
 /**
@@ -50,7 +50,7 @@ fun NavGraph(navController: NavHostController) {
             val deviceAddress = backStackEntry.arguments?.getString("deviceAddress")
             requireNotNull(deviceAddress) { "Device address cannot be null" }
 
-            ChatScreen(
+            OutcomingChatScreen(
                 deviceAddress = deviceAddress,
                 onNavigateUp = { navController.navigateUp() }
             )

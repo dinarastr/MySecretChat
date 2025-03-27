@@ -31,7 +31,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import ru.yandexpraktikum.blechat.presentation.chats.ChatEvent
-import ru.yandexpraktikum.blechat.presentation.chats.outcomingchat.ChatViewModel
 import ru.yandexpraktikum.blechat.presentation.chats.outcomingchat.MessageItem
 
 /**

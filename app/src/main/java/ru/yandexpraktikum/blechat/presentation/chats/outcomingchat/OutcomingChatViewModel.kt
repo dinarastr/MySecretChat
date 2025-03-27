@@ -16,7 +16,7 @@ import ru.yandexpraktikum.blechat.presentation.chats.ChatState
 import javax.inject.Inject
 
 @HiltViewModel
-class ChatViewModel @Inject constructor(
+class OutcomingChatViewModel @Inject constructor(
     private val bluetoothController: BluetoothController
 ) : ViewModel() {
 
@@ -26,21 +26,6 @@ class ChatViewModel @Inject constructor(
         SharingStarted.WhileSubscribed(5000),
         ChatState()
     )
-
-    fun initializeChat(deviceAddress: String) {
-        viewModelScope.launch {
-            val device = ScannedBluetoothDevice(
-                name = deviceAddress, // You might want to get the actual name from paired devices
-                address = deviceAddress
-            )
-            _state.update { it.copy(connectedDevice = device) }
-            
-            bluetoothController.connectToDevice(device)
-                .collect { connectionState ->
-                    // Handle connection state changes
-                }
-        }
-    }
 
     fun onEvent(event: ChatEvent) {
         when (event) {
@@ -66,7 +51,9 @@ class ChatViewModel @Inject constructor(
                     _state.update { it.copy(
                         messages = it.messages + message
                     )}
-                    bluetoothController.sendMessage(event.message)
+                    bluetoothController.sendMessage(
+                        event.message,
+                        event.address)
                 }
             }
         }

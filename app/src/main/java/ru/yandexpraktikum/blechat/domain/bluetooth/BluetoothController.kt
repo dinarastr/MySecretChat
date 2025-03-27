@@ -24,7 +24,7 @@ interface BluetoothController {
 
     fun connectToDevice(device: ScannedBluetoothDevice): Flow<ConnectionState>
     
-    suspend fun sendMessage(message: String): Boolean
+    suspend fun sendMessage(message: String, deviceAddress: String): Boolean
     suspend fun sendServerMessage(message: String, deviceAddress: String): Boolean
     
     fun closeConnection()

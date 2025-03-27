@@ -38,17 +38,17 @@ import ru.yandexpraktikum.blechat.presentation.chats.ChatEvent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatScreen(
+fun OutcomingChatScreen(
     deviceAddress: String,
     onNavigateUp: () -> Unit,
-    viewModel: ChatViewModel = hiltViewModel()
+    viewModel: OutcomingChatViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
     var messageText by remember { mutableStateOf("") }
 
     LaunchedEffect(deviceAddress) {
         // Initialize chat with the connected device
-        viewModel.initializeChat(deviceAddress)
+        viewModel.onEvent(ChatEvent.LoadMessages(deviceAddress))
     }
 
     Scaffold(

@@ -4,6 +4,7 @@ import android.Manifest
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattServer
 import android.bluetooth.BluetoothGattServerCallback
 import android.bluetooth.BluetoothGattService
@@ -20,6 +21,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
+import androidx.annotation.RequiresPermission
 import androidx.core.app.ActivityCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
@@ -249,7 +251,9 @@ class BluetoothControllerImpl @Inject constructor(
     private var currentGatt: BluetoothGatt? = null
 
     private val serviceUUID = UUID.fromString("0000b81d-0000-1000-8000-00805f9b34fb")
-    private val messageCharUUID = UUID.fromString("7db3e235-3608-41f3-a03c-955fcbd2ea4b")
+    private val writeCharUUID = UUID.fromString("7db3e235-3608-41f3-a03c-955fcbd2ea4b")
+    private val notifyCharUUID = UUID.fromString("7db3e235-3608-41f3-a03c-955fcbd2ea4c")
+    private val CLIENT_CONFIG_DESCRIPTOR = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
 
     private val gattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
@@ -282,13 +286,36 @@ class BluetoothControllerImpl @Inject constructor(
             }
         }
 
+        override fun onDescriptorWrite(
+            gatt: BluetoothGatt?,
+            descriptor: BluetoothGattDescriptor?,
+            status: Int
+        ) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                Log.d("BLE", "Descriptor write successful, notifications should now work")
+            } else {
+                Log.e("BLE", "Descriptor write failed with status: $status")
+            }
+        }
+
+        override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                val service = gatt?.getService(serviceUUID)
+                val notifyCharacteristic = service?.getCharacteristic(notifyCharUUID)
+                if (notifyCharacteristic != null) {
+                    Log.d("BLE", "Found notify characteristic, enabling notifications")
+                    gatt?.setCharacteristicNotification(notifyCharacteristic, true)
+                }
+            }
+        }
+
+        @Deprecated("Deprecated in Java")
         override fun onCharacteristicChanged(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
-            value: ByteArray
         ) {
-            if (characteristic.uuid == messageCharUUID) {
-                val message = String(value, Charset.defaultCharset())
+            if (characteristic.uuid == notifyCharUUID) {
+                val message = String(characteristic.value, Charset.defaultCharset())
                 viewModelScope.launch {
                     _scannedDevices.update { devices ->
                         devices.map {
@@ -303,6 +330,8 @@ class BluetoothControllerImpl @Inject constructor(
                     }
                 }
                 Log.i("BLE", "Received message: $message")
+            } else {
+                Log.i("BLE", "Received message for unknown characteristic")
             }
         }
     }
@@ -334,7 +363,9 @@ class BluetoothControllerImpl @Inject constructor(
                         }
                     }
                     BluetoothProfile.STATE_DISCONNECTED -> {
-                        _isConnected.value = false
+                        _connectedDevices.update { devices ->
+                            devices - devices.first {it.address == device?.address}
+                        }
                     }
                 }
             }
@@ -350,7 +381,7 @@ class BluetoothControllerImpl @Inject constructor(
                 offset: Int,
                 value: ByteArray?
             ) {
-                if (characteristic?.uuid == messageCharUUID) {
+                if (characteristic?.uuid == writeCharUUID) {
                     gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null)
                     val message = value?.let { String(it, Charset.defaultCharset()) }
                     // Handle received message here
@@ -377,16 +408,27 @@ class BluetoothControllerImpl @Inject constructor(
 
         // Create and add the GATT service
         val service = BluetoothGattService(serviceUUID, BluetoothGattService.SERVICE_TYPE_PRIMARY)
-        val characteristic = BluetoothGattCharacteristic(
-            messageCharUUID,
-            BluetoothGattCharacteristic.PROPERTY_READ or
-                    BluetoothGattCharacteristic.PROPERTY_WRITE or
-                    BluetoothGattCharacteristic.PROPERTY_NOTIFY,
-            BluetoothGattCharacteristic.PERMISSION_READ or
-                    BluetoothGattCharacteristic.PERMISSION_WRITE
+        val writeCharacteristic = BluetoothGattCharacteristic(
+            writeCharUUID,
+            BluetoothGattCharacteristic.PROPERTY_WRITE,
+            BluetoothGattCharacteristic.PERMISSION_WRITE
         )
 
-        service.addCharacteristic(characteristic)
+        val notifyCharacteristic = BluetoothGattCharacteristic(
+            notifyCharUUID,
+            BluetoothGattCharacteristic.PROPERTY_READ or
+                    BluetoothGattCharacteristic.PROPERTY_NOTIFY,
+            BluetoothGattCharacteristic.PERMISSION_READ
+        )
+
+        val descriptor = BluetoothGattDescriptor(
+            CLIENT_CONFIG_DESCRIPTOR,
+            BluetoothGattDescriptor.PERMISSION_READ or BluetoothGattDescriptor.PERMISSION_WRITE
+        )
+        notifyCharacteristic.addDescriptor(descriptor)
+
+        service.addCharacteristic(writeCharacteristic)
+        service.addCharacteristic(notifyCharacteristic)
         gattServer?.addService(service)
 
         // Start advertising to make the server discoverable
@@ -430,7 +472,7 @@ class BluetoothControllerImpl @Inject constructor(
     }
 
     override suspend fun sendServerMessage(message: String, deviceAddress: String): Boolean {
-        if (ActivityCompat.checkSelfPermission(
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(
                 context,
                 Manifest.permission.BLUETOOTH_CONNECT
             ) != PackageManager.PERMISSION_GRANTED
@@ -441,12 +483,13 @@ class BluetoothControllerImpl @Inject constructor(
         val device = bluetoothAdapter?.getRemoteDevice(deviceAddress)
         // Get the existing service and characteristic
         val service = gattServer?.getService(serviceUUID)
-        val characteristic = service?.getCharacteristic(messageCharUUID)
+        val characteristic = service?.getCharacteristic(notifyCharUUID)
 
         return try {
             if (characteristic != null) {
                 characteristic.setValue(message.toByteArray(Charset.defaultCharset()))
-                gattServer?.notifyCharacteristicChanged(device, characteristic, false)
+                val success = gattServer?.notifyCharacteristicChanged(device, characteristic, false)
+                Log.i("BLE", "Server message sent: $success")
                 _connectedDevices.update { devices ->
                     devices.map {
                         if (it.address == deviceAddress) {
@@ -469,13 +512,25 @@ class BluetoothControllerImpl @Inject constructor(
         }
     }
 
-    override suspend fun sendMessage(message: String): Boolean {
+    override suspend fun sendMessage(message: String, deviceAddress: String): Boolean {
         val gattService = currentGatt?.getService(serviceUUID)
-        val characteristic = gattService?.getCharacteristic(messageCharUUID)
+        val characteristic = gattService?.getCharacteristic(writeCharUUID)
 
         return if (characteristic != null) {
             characteristic.setValue(message.toByteArray(Charset.defaultCharset()))
-            currentGatt?.writeCharacteristic(characteristic) == true
+            currentGatt?.writeCharacteristic(characteristic)
+            _scannedDevices.update { devices ->
+                devices.map {
+                    if (it.address == deviceAddress) {
+                        it.copy(messages = it.messages + Message(
+                            text = message,
+                            senderAddress = bluetoothAdapter?.address ?: "",
+                            isFromLocalUser = true
+                        ))
+                    } else it
+                }
+            }
+            true
         } else false
     }
 
