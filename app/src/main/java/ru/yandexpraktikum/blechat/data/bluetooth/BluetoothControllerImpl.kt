@@ -4,7 +4,6 @@ import android.Manifest
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
-import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattServer
 import android.bluetooth.BluetoothGattServerCallback
 import android.bluetooth.BluetoothGattService
@@ -168,10 +167,6 @@ class BluetoothControllerImpl @Inject constructor(
             .build()
 
         try {
-            Log.d("BluetoothAdvertiser", "startAdvertising() called")
-            Log.d("BluetoothAdvertiser", "advertiseSettings: $settings")
-            Log.d("BluetoothAdvertiser", "advertiseData: $data")
-            Log.d("BluetoothAdvertiser", "advertiseCallback: $advertiseCallback")
             bluetoothLeAdvertiser?.startAdvertising(settings, data, advertiseCallback)
         } catch (e: Exception) {
             Log.e("BLE", "Failed to start advertising", e)
