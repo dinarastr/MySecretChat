@@ -422,6 +422,46 @@ class BluetoothControllerImpl @Inject constructor(
         return _connectionState
     }
 
+    override suspend fun sendServerMessage(message: String, deviceAddress: String): Boolean {
+        if (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.BLUETOOTH_CONNECT
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return false
+        }
+
+        val device = bluetoothAdapter?.getRemoteDevice(deviceAddress)
+        // Get the existing service and characteristic
+        val service = gattServer?.getService(serviceUUID)
+        val characteristic = service?.getCharacteristic(messageCharUUID)
+
+        return try {
+            if (characteristic != null) {
+                characteristic.setValue(message.toByteArray(Charset.defaultCharset()))
+                gattServer?.notifyCharacteristicChanged(device, characteristic, false)
+                _connectedDevices.update { devices ->
+                    devices.map {
+                        if (it.address == deviceAddress) {
+                            it.copy(messages = it.messages + Message(
+                                text = message,
+                                senderAddress = bluetoothAdapter?.address ?: "",
+                                isFromLocalUser = true
+                            ))
+                        } else it
+                    }
+                }
+                true
+            } else {
+                Log.e("BLE", "Characteristic not found")
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("BLE", "Failed to send server message", e)
+            false
+        }
+    }
+
     override suspend fun sendMessage(message: String): Boolean {
         val gattService = currentGatt?.getService(serviceUUID)
         val characteristic = gattService?.getCharacteristic(messageCharUUID)

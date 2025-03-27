@@ -20,7 +20,7 @@ import javax.inject.Inject
 @HiltViewModel
 class IncomingChatViewModel @Inject constructor(
     private val bluetoothController: BluetoothController
-): ViewModel() {
+) : ViewModel() {
 
     private val _state = MutableStateFlow(ChatState())
     val state = _state.stateIn(
@@ -32,27 +32,25 @@ class IncomingChatViewModel @Inject constructor(
     fun onEvent(event: ChatEvent) {
         when (event) {
             is ChatEvent.SendMessage -> {
-//                viewModelScope.launch {
-//                    val message = Message(
-//                        text = event.message,
-//                        senderAddress = event.address,
-//                        isFromLocalUser = true
-//                    )
-//                    _state.update { it.copy(
-//                        messages = it.messages + message
-//                    )}
-//                    bluetoothController.sendMessage(event.message)
-//                }
+                viewModelScope.launch {
+                    bluetoothController.sendServerMessage(
+                        event.message,
+                        event.address
+                    )
+                }
             }
+
             is ChatEvent.LoadMessages -> {
                 viewModelScope.launch {
                     bluetoothController.connectedDevices.collect { devices ->
                         val device = devices.find { it.address == event.address }
-                        _state.update { it.copy(
-                            connectedDevice = device,
-                            isConnected = device != null,
-                            messages = device?.messages ?: emptyList()
-                        ) }
+                        _state.update {
+                            it.copy(
+                                connectedDevice = device,
+                                isConnected = device != null,
+                                messages = device?.messages ?: emptyList()
+                            )
+                        }
                     }
                 }
             }
