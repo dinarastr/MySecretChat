@@ -8,18 +8,14 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import ru.yandexpraktikum.blechat.domain.bluetooth.BluetoothController
-import ru.yandexpraktikum.blechat.domain.model.Message
+import ru.yandexpraktikum.blechat.domain.bluetooth.BLEServerController
 import ru.yandexpraktikum.blechat.presentation.chats.ChatEvent
 import ru.yandexpraktikum.blechat.presentation.chats.ChatState
 import javax.inject.Inject
 
-/**
- * TODO("Add documentation")
- */
 @HiltViewModel
 class IncomingChatViewModel @Inject constructor(
-    private val bluetoothController: BluetoothController
+    private val serverController: BLEServerController
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ChatState())
@@ -33,7 +29,7 @@ class IncomingChatViewModel @Inject constructor(
         when (event) {
             is ChatEvent.SendMessage -> {
                 viewModelScope.launch {
-                    bluetoothController.sendServerMessage(
+                    serverController.sendServerMessage(
                         event.message,
                         event.address
                     )
@@ -42,7 +38,7 @@ class IncomingChatViewModel @Inject constructor(
 
             is ChatEvent.LoadMessages -> {
                 viewModelScope.launch {
-                    bluetoothController.connectedDevices.collect { devices ->
+                    serverController.connectedDevices.collect { devices ->
                         val device = devices.find { it.address == event.address }
                         _state.update {
                             it.copy(

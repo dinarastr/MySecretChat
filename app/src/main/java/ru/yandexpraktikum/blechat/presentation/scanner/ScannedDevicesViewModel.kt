@@ -1,6 +1,5 @@
 package ru.yandexpraktikum.blechat.presentation.scanner
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -11,8 +10,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import ru.yandexpraktikum.blechat.domain.bluetooth.BluetoothController
-import ru.yandexpraktikum.blechat.domain.model.ConnectionState
+import ru.yandexpraktikum.blechat.domain.bluetooth.BLEClientController
+import ru.yandexpraktikum.blechat.domain.bluetooth.BLEServerController
 import javax.inject.Inject
 
 /**
@@ -20,15 +19,16 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class ScannedDevicesViewModel @Inject constructor(
-    private val bluetoothController: BluetoothController
+    private val serverController: BLEServerController,
+    private val clientController: BLEClientController
 ): ViewModel() {
 
     private val _state = MutableStateFlow(ScannedDevicesState())
 
     val state = combine(
-        bluetoothController.connectedDevices,
-        bluetoothController.scannedDevices,
-        bluetoothController.isBluetoothEnabled,
+        serverController.connectedDevices,
+        clientController.scannedDevices,
+        clientController.isBluetoothEnabled,
         _state
     ) { connectedDevices, scannedDevices, isEnabled, state ->
         state.copy(
@@ -55,7 +55,7 @@ class ScannedDevicesViewModel @Inject constructor(
                 if (_state.value.isAdvertising) {
                     startAdvertising()
                 } else {
-                    bluetoothController.stopServer()
+                    serverController.stopServer()
                 }
             }
             is ScannedDevicesEvent.ToggleScan -> {
@@ -67,28 +67,12 @@ class ScannedDevicesViewModel @Inject constructor(
                 if (_state.value.isScanning) {
                     startScan()
                 } else {
-                    bluetoothController.stopScan()
+                    clientController.stopScan()
                 }
             }
 
             is ScannedDevicesEvent.ConnectToDevice -> {
-                viewModelScope.launch {
-                    bluetoothController.connectToDevice(event.device)
-                        .collect { connectionState ->
-                            when (connectionState) {
-                                is ConnectionState.Connected -> {
-                                    Log.i("ScannedDevicesViewModel", "Connected")
-                                }
-                                is ConnectionState.Disconnected -> {
-                                    Log.i("ScannedDevicesViewModel", "Disconnected")
-                                    _state.update {
-                                        it.copy(errorMessage = "Device disconnected")
-                                    }
-                                }
-                                else -> Unit
-                            }
-                        }
-                }
+                clientController.connectToDevice(event.device)
             }
         }
     }
@@ -96,11 +80,11 @@ class ScannedDevicesViewModel @Inject constructor(
     private fun startScan() {
         viewModelScope.launch {
             try {
-                bluetoothController.startScan()
+                clientController.startScan()
                 delay(SCAN_PERIOD)
                 if (_state.value.isScanning) {
                     _state.update { it.copy(isScanning = false) }
-                    bluetoothController.stopScan()
+                    clientController.stopScan()
                 }
             } catch (e: Exception) {
                 _state.update {
@@ -109,7 +93,7 @@ class ScannedDevicesViewModel @Inject constructor(
                         errorMessage = "Failed to scan: ${e.localizedMessage}"
                     )
                 }
-                bluetoothController.stopScan()
+                clientController.stopScan()
             }
         }
     }
@@ -118,7 +102,7 @@ class ScannedDevicesViewModel @Inject constructor(
     private fun startAdvertising() {
         viewModelScope.launch {
             try {
-                bluetoothController.startServer()
+                serverController.startServer()
             } catch (e: Exception) {
                 _state.update {
                     it.copy(
@@ -126,16 +110,17 @@ class ScannedDevicesViewModel @Inject constructor(
                         errorMessage = "Failed to advertise: ${e.localizedMessage}"
                     )
                 }
-                bluetoothController.stopServer()
+                serverController.stopServer()
             }
         }
     }
 
     override fun onCleared() {
         super.onCleared()
-        bluetoothController.stopScan()
-        bluetoothController.stopAdvertising()
-        bluetoothController.release()
+        clientController.stopScan()
+        serverController.stopAdvertising()
+        clientController.release()
+        serverController.release()
     }
 
     companion object {

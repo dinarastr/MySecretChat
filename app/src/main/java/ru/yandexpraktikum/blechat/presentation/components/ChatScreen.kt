@@ -30,10 +30,6 @@ import androidx.compose.ui.unit.dp
 import ru.yandexpraktikum.blechat.domain.model.Message
 import ru.yandexpraktikum.blechat.domain.model.ScannedBluetoothDevice
 
-/**
- * TODO("Add documentation")
- */
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(

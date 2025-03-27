@@ -8,16 +8,15 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import ru.yandexpraktikum.blechat.domain.bluetooth.BluetoothController
+import ru.yandexpraktikum.blechat.domain.bluetooth.BLEClientController
 import ru.yandexpraktikum.blechat.domain.model.Message
-import ru.yandexpraktikum.blechat.domain.model.ScannedBluetoothDevice
 import ru.yandexpraktikum.blechat.presentation.chats.ChatEvent
 import ru.yandexpraktikum.blechat.presentation.chats.ChatState
 import javax.inject.Inject
 
 @HiltViewModel
 class OutcomingChatViewModel @Inject constructor(
-    private val bluetoothController: BluetoothController
+    private val clientController: BLEClientController
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ChatState())
@@ -31,7 +30,7 @@ class OutcomingChatViewModel @Inject constructor(
         when (event) {
             is ChatEvent.LoadMessages -> {
                 viewModelScope.launch {
-                    bluetoothController.scannedDevices.collect { devices ->
+                    clientController.scannedDevices.collect { devices ->
                         val device = devices.find { it.address == event.address }
                         _state.update { it.copy(
                             connectedDevice = device,
@@ -51,9 +50,10 @@ class OutcomingChatViewModel @Inject constructor(
                     _state.update { it.copy(
                         messages = it.messages + message
                     )}
-                    bluetoothController.sendMessage(
+                    clientController.sendMessage(
                         event.message,
-                        event.address)
+                        event.address
+                    )
                 }
             }
         }
@@ -61,6 +61,6 @@ class OutcomingChatViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        bluetoothController.closeConnection()
+        clientController.closeConnection()
     }
 }
