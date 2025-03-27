@@ -4,6 +4,7 @@ import android.Manifest
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattServer
 import android.bluetooth.BluetoothGattServerCallback
 import android.bluetooth.BluetoothGattService
@@ -297,7 +298,20 @@ class BluetoothControllerImpl @Inject constructor(
         ) {
             if (characteristic.uuid == messageCharUUID) {
                 val message = String(value, Charset.defaultCharset())
-                Log.i("sent", message)
+                viewModelScope.launch {
+                    _scannedDevices.update { devices ->
+                        devices.map {
+                            if (it.address == gatt.device.address) {
+                                it.copy(messages = it.messages + Message(
+                                    text = message,
+                                    senderAddress = gatt.device.address,
+                                    isFromLocalUser = false
+                                ))
+                            } else it
+                        }
+                    }
+                }
+                Log.i("BLE", "Received message: $message")
             }
         }
     }
@@ -333,6 +347,8 @@ class BluetoothControllerImpl @Inject constructor(
                     }
                 }
             }
+
+
 
             override fun onCharacteristicWriteRequest(
                 device: android.bluetooth.BluetoothDevice?,
