@@ -8,10 +8,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import ru.yandexpraktikum.blechat.presentation.chats.ChatEvent
 import ru.yandexpraktikum.blechat.presentation.components.ChatScreen
 
-/**
- * TODO("Add documentation")
- */
-
 @Composable
 fun IncomingChatScreen(
     deviceAddress: String,

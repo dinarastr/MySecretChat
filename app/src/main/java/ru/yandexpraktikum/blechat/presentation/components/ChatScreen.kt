@@ -26,7 +26,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import ru.yandexpraktikum.blechat.R
 import ru.yandexpraktikum.blechat.domain.model.Message
 import ru.yandexpraktikum.blechat.domain.model.ScannedBluetoothDevice
 
@@ -48,7 +50,7 @@ fun ChatScreen(
                 title = { Text(chatsTitle) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
-                        Icon(Icons.Default.ArrowBack, "Navigate back")
+                        Icon(Icons.Default.ArrowBack, stringResource(R.string.navigate_back))
                     }
                 }
             )
@@ -91,7 +93,7 @@ fun ChatScreen(
                         value = messageText,
                         onValueChange = { messageText = it },
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("Type a message") }
+                        placeholder = { Text(stringResource(R.string.type_a_message)) }
                     )
 
                     Spacer(modifier = Modifier.width(8.dp))
@@ -106,7 +108,7 @@ fun ChatScreen(
                         },
                         enabled = messageText.isNotBlank() && connectedDevice != null
                     ) {
-                        Text("Send")
+                        Text(stringResource(R.string.send))
                     }
                 }
             }

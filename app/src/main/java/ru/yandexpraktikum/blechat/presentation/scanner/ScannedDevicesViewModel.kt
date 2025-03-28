@@ -33,7 +33,9 @@ class ScannedDevicesViewModel @Inject constructor(
         _state
     ) { connectedDevices, scannedDevices, isBluetoothEnabled, isLocationEnabled, state ->
         state.copy(
-            connectedDevices = connectedDevices,
+            connectedDevices = connectedDevices.map {
+                it.copy(isConnected = true)
+            },
             scannedDevices = scannedDevices,
             isBluetoothEnabled = isBluetoothEnabled,
             isLocationEnabled = isLocationEnabled,
@@ -76,7 +78,7 @@ class ScannedDevicesViewModel @Inject constructor(
             is ScannedDevicesEvent.ConnectToDevice -> {
                 clientController.connectToDevice(event.device)
             }
-            is ScannedDevicesEvent.CheckLocationStatus -> {
+            is ScannedDevicesEvent.CheckLocationSettings -> {
                 clientController.updateLocationState()
             }
         }
