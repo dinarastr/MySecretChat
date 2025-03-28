@@ -80,7 +80,7 @@ fun ScannedDevicesListScreen(
         if (state.isLocationEnabled) {
             viewModel.onEvent(ScannedDevicesEvent.ToggleScan)
         } else {
-            Toast.makeText(context, "Failed to enable location", Toast.LENGTH_SHORT).show()
+            Log.e( "scanner","Failed to enable location")
         }
     }
 
