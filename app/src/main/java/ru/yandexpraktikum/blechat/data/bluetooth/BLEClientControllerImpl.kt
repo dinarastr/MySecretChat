@@ -227,7 +227,7 @@ class BLEClientControllerImpl @Inject constructor(
             }
         }
 
-        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+        @RequiresApi(Build.VERSION_CODES.S)
         override fun onCharacteristicChanged(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
