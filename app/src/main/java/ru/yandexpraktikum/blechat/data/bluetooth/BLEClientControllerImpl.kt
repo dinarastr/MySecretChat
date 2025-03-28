@@ -10,6 +10,7 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.LocationManager
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -32,6 +33,7 @@ import javax.inject.Inject
 class BLEClientControllerImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val bluetoothAdapter: BluetoothAdapter?,
+    private val locationManager: LocationManager,
     private val viewModelScope: CoroutineScope
 ): BLEClientController {
 
@@ -49,8 +51,15 @@ class BLEClientControllerImpl @Inject constructor(
     override val isBluetoothEnabled: StateFlow<Boolean>
         get() = _isBluetoothEnabled.asStateFlow()
 
+    private val _isLocationEnabled = MutableStateFlow(false)
+    override val isLocationEnabled: StateFlow<Boolean>
+        get() = _isLocationEnabled.asStateFlow()
+
     init {
         initializeBluetoothState()
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            updateLocationState()
+        }
     }
 
     private fun initializeBluetoothState() {
@@ -58,6 +67,14 @@ class BLEClientControllerImpl @Inject constructor(
             _isBluetoothEnabled.value = bluetoothAdapter?.isEnabled == true
         } catch (e: Exception) {
             Log.e("BLE", "Failed to initialize Bluetooth state", e)
+        }
+    }
+
+    override fun updateLocationState() {
+        try {
+            _isLocationEnabled.value = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+        } catch (e: Exception) {
+            Log.e("BLE", "Failed to initialize Location state", e)
         }
     }
 
@@ -135,6 +152,11 @@ class BLEClientControllerImpl @Inject constructor(
             }
         }
         bleScanner?.stopScan(scanCallback)
+        _scannedDevices.update {
+            it.filter { device ->
+                device.isConnected
+            }
+        }
     }
 
     private val gattCallback = object : BluetoothGattCallback() {

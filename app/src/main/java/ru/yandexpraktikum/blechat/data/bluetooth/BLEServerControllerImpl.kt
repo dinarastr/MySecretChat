@@ -273,8 +273,15 @@ class BLEServerControllerImpl @Inject constructor(
 
         return try {
             if (characteristic != null) {
-                characteristic.setValue(message.toByteArray(Charset.defaultCharset()))
-                val success = gattServer?.notifyCharacteristicChanged(device, characteristic, false)
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                    characteristic.setValue(message.toByteArray(Charset.defaultCharset()))
+                }
+                val success =
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                        gattServer?.notifyCharacteristicChanged(device, characteristic, false)
+                    } else {
+                        gattServer?.notifyCharacteristicChanged(device!!, characteristic, false, message.toByteArray(Charset.defaultCharset()))
+                   }
                 Log.i("BLE", "Server message sent: $success")
                 _connectedDevices.update { devices ->
                     devices.map {

@@ -29,12 +29,14 @@ class ScannedDevicesViewModel @Inject constructor(
         serverController.connectedDevices,
         clientController.scannedDevices,
         clientController.isBluetoothEnabled,
+        clientController.isLocationEnabled,
         _state
-    ) { connectedDevices, scannedDevices, isEnabled, state ->
+    ) { connectedDevices, scannedDevices, isBluetoothEnabled, isLocationEnabled, state ->
         state.copy(
             connectedDevices = connectedDevices,
             scannedDevices = scannedDevices,
-            isBluetoothEnabled = isEnabled,
+            isBluetoothEnabled = isBluetoothEnabled,
+            isLocationEnabled = isLocationEnabled,
             isScanning = state.isScanning,
             isAdvertising = state.isAdvertising
         )
@@ -74,6 +76,9 @@ class ScannedDevicesViewModel @Inject constructor(
             is ScannedDevicesEvent.ConnectToDevice -> {
                 clientController.connectToDevice(event.device)
             }
+            is ScannedDevicesEvent.CheckLocationStatus -> {
+                clientController.updateLocationState()
+            }
         }
     }
 
@@ -103,6 +108,11 @@ class ScannedDevicesViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 serverController.startServer()
+                delay(ADVERTISE_PERIOD)
+                if (_state.value.isAdvertising) {
+                    _state.update { it.copy(isAdvertising = false) }
+                    serverController.stopAdvertising()
+                }
             } catch (e: Exception) {
                 _state.update {
                     it.copy(
@@ -124,6 +134,7 @@ class ScannedDevicesViewModel @Inject constructor(
     }
 
     companion object {
-        private const val SCAN_PERIOD = 20000L // 10 seconds
+        private const val SCAN_PERIOD = 15000L
+        private const val ADVERTISE_PERIOD = 15000L
     }
 }

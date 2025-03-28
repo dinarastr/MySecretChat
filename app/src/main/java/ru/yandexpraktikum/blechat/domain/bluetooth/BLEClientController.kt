@@ -5,7 +5,10 @@ import ru.yandexpraktikum.blechat.domain.model.ScannedBluetoothDevice
 
 interface BLEClientController {
     val isBluetoothEnabled: StateFlow<Boolean>
+    val isLocationEnabled: StateFlow<Boolean>
     val scannedDevices: StateFlow<List<ScannedBluetoothDevice>>
+
+    fun updateLocationState()
 
     fun startScan()
     fun stopScan()

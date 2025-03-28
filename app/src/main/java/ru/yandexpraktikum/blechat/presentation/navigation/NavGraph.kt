@@ -25,9 +25,6 @@ fun NavGraph(navController: NavHostController) {
                     } else {
                         navController.navigate(Screen.Chat.createRoute(deviceAddress))
                     }
-                },
-                onNavigateUp = {
-                    navController.navigateUp()
                 }
             )
         }

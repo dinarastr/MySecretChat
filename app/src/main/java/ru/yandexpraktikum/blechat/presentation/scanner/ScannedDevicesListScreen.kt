@@ -2,9 +2,12 @@ package ru.yandexpraktikum.blechat.presentation.scanner
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.provider.Settings
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -14,13 +17,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -38,27 +37,26 @@ import androidx.core.app.ActivityCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import ru.yandexpraktikum.blechat.domain.model.ScannedBluetoothDevice
 
-/**
- * TODO("Add documentation")
- */
-
-val ALL_BLE_PERMISSIONS = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+val ALL_BLE_PERMISSIONS = if (Build.VERSION.SDK_INT in Build.VERSION_CODES.S..Build.VERSION_CODES.S_V2) {
     arrayOf(
         Manifest.permission.BLUETOOTH_CONNECT,
         Manifest.permission.BLUETOOTH_SCAN,
     )
-} else {
+} else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S){
     arrayOf(
         Manifest.permission.BLUETOOTH_ADMIN,
         Manifest.permission.BLUETOOTH,
         Manifest.permission.ACCESS_FINE_LOCATION
+    )
+} else {
+    arrayOf(
+        Manifest.permission.BLUETOOTH_SCAN,
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScannedDevicesListScreen(
-    onNavigateUp: () -> Unit,
     onDeviceClick: (String, Boolean) -> Unit,
     viewModel: ScannedDevicesViewModel = hiltViewModel()
 ) {
@@ -69,9 +67,20 @@ fun ScannedDevicesListScreen(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
-
+            Log.i("scanner", "Bluetooth enabled")
         } else {
             Toast.makeText(context, "Failed to enable Bluetooth", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val locationSettingsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) {
+        viewModel.onEvent(ScannedDevicesEvent.CheckLocationStatus)
+        if (state.isLocationEnabled) {
+            viewModel.onEvent(ScannedDevicesEvent.ToggleScan)
+        } else {
+            Toast.makeText(context, "Failed to enable location", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -85,8 +94,24 @@ fun ScannedDevicesListScreen(
         }
     }
 
+    val connectLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) {
+        if (it) {
+            enableBluetoothLauncher.launch(
+                Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            )
+        } else {
+            Toast.makeText(context, "Failed to enable connecting", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     LaunchedEffect(state.isBluetoothEnabled) {
-        if (!state.isBluetoothEnabled) {
+        if (!state.isBluetoothEnabled && Build.VERSION.SDK_INT in
+            Build.VERSION_CODES.S..Build.VERSION_CODES.S_V2
+            ) {
+            connectLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
+        } else if (!state.isBluetoothEnabled) {
             enableBluetoothLauncher.launch(
                 Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             )
@@ -96,17 +121,7 @@ fun ScannedDevicesListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Scanned Devices") },
-                navigationIcon = {
-                    IconButton(
-                        onClick = onNavigateUp
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                }
+                title = { Text("Scanned Devices") }
             )
         },
 
@@ -159,8 +174,13 @@ fun ScannedDevicesListScreen(
                 )
             }
 
-            GrantPermissionsButton(onPermissionGranted = {
-                viewModel.onEvent(ScannedDevicesEvent.ToggleScan)
+            ScanButton(context = context, onPermissionGranted = {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S && state.isLocationEnabled.not())  {
+                    val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                    locationSettingsLauncher.launch(intent)
+                } else {
+                    viewModel.onEvent(ScannedDevicesEvent.ToggleScan)
+                }
             }, state = state)
             Button(onClick = {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(
@@ -173,7 +193,7 @@ fun ScannedDevicesListScreen(
                     viewModel.onEvent(ScannedDevicesEvent.ToggleAdvertising)
                 }
             }) {
-                Text(if (state.isScanning) "Stop Server" else "Start server")
+                Text(if (state.isAdvertising) "Stop Server" else "Start server")
             }
 
         }
@@ -181,20 +201,25 @@ fun ScannedDevicesListScreen(
 }
 
 @Composable
-fun GrantPermissionsButton(onPermissionGranted: () -> Unit, state: ScannedDevicesState) {
+fun ScanButton(context: Context, onPermissionGranted: () -> Unit, state: ScannedDevicesState) {
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { granted ->
         if (granted.values.all { it }) {
-            // User has granted all permissions
             onPermissionGranted()
         } else {
-            // TODO: handle potential rejection in the usual way
+            Log.e("scanner", "necessary permissions rejected")
         }
     }
 
-    // User presses this button to request permissions
-    Button(onClick = { launcher.launch(ALL_BLE_PERMISSIONS) }) {
+    Button(onClick = {
+        if (ALL_BLE_PERMISSIONS.any { ActivityCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED }) {
+            launcher.launch(ALL_BLE_PERMISSIONS)
+        } else {
+            onPermissionGranted()
+        }
+
+    }) {
         Text(if (state.isScanning) "Stop Scan" else "Scan for Devices")
     }
 }
