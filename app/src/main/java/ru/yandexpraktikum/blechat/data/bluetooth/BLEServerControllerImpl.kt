@@ -30,6 +30,9 @@ import ru.yandexpraktikum.blechat.domain.bluetooth.BLEServerController
 import ru.yandexpraktikum.blechat.domain.model.Message
 import ru.yandexpraktikum.blechat.domain.model.ScannedBluetoothDevice
 import ru.yandexpraktikum.blechat.utils.checkForConnectPermission
+import ru.yandexpraktikum.blechat.utils.notifyCharUUID
+import ru.yandexpraktikum.blechat.utils.serviceUUID
+import ru.yandexpraktikum.blechat.utils.writeCharUUID
 import java.nio.charset.Charset
 import java.util.UUID
 import javax.inject.Inject
@@ -41,9 +44,6 @@ class BLEServerControllerImpl @Inject constructor(
     private val viewModelScope: CoroutineScope
 ): BLEServerController {
 
-    private val serviceUUID = UUID.fromString("0000b81d-0000-1000-8000-00805f9b34fb")
-    private val writeCharUUID = UUID.fromString("7db3e235-3608-41f3-a03c-955fcbd2ea4b")
-    private val notifyCharUUID = UUID.fromString("7db3e235-3608-41f3-a03c-955fcbd2ea4c")
     private val CLIENT_CONFIG_DESCRIPTOR = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
 
     private var gattServer: BluetoothGattServer? = null

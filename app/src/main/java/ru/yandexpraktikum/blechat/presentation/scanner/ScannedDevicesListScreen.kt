@@ -12,14 +12,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -29,7 +26,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -37,7 +33,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import ru.yandexpraktikum.blechat.R
-import ru.yandexpraktikum.blechat.domain.model.ScannedBluetoothDevice
+import ru.yandexpraktikum.blechat.presentation.components.DeviceItem
 import ru.yandexpraktikum.blechat.utils.ALL_BLE_PERMISSIONS
 import ru.yandexpraktikum.blechat.utils.advertiseLauncher
 import ru.yandexpraktikum.blechat.utils.bluetoothLauncher
@@ -67,7 +63,7 @@ fun ScannedDevicesListScreen(
         contract = ActivityResultContracts.RequestPermission()
     ) {
         if (it) {
-            viewModel.onEvent(ScannedDevicesEvent.SubscribeForNotifications)
+            Log.i("Server", "Notifications enabled")
         } else {
             Log.i("Server", "Failed to enable notifications")
         }
@@ -89,8 +85,6 @@ fun ScannedDevicesListScreen(
                 context,
                 Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             notificationsLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        } else {
-            viewModel.onEvent(ScannedDevicesEvent.SubscribeForNotifications)
         }
     }
 
@@ -229,37 +223,5 @@ fun ScanningButton(
         }
     ) {
         Text(if (state.isScanning) stringResource(R.string.stop_scan) else stringResource(R.string.scan_for_devices))
-    }
-
-}
-
-@Composable
-private fun DeviceItem(
-    device: ScannedBluetoothDevice,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        onClick = onClick
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth()
-        ) {
-            Text(
-                text = device.name ?: stringResource(R.string.unknown_device),
-                style = MaterialTheme.typography.bodyLarge
-            )
-            Text(
-                text = device.address,
-                style = MaterialTheme.typography.bodyMedium
-            )
-            if (device.isConnected) {
-                Text("Connected", color = Color.Green)
-            }
-        }
     }
 }

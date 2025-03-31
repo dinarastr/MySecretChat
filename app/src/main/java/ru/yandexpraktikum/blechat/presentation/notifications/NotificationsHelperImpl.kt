@@ -19,18 +19,6 @@ class NotificationsHelperImpl
     private val notificationManager: NotificationManagerCompat,
 ): NotificationsHelper {
 
-    override fun createChannel(
-        title: String,
-        channelId: String,
-    ) {
-        val channel = NotificationChannelCompat.Builder(/*id=*/channelId,
-            NotificationManager.IMPORTANCE_DEFAULT
-        )
-            .setName(title)
-            .build()
-        notificationManager.createNotificationChannel(channel)
-    }
-
     @SuppressLint("MissingPermission")
     override fun notifyOnMessageReceived(title: String, message: String) {
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)

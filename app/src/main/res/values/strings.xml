@@ -1,8 +1,8 @@
 <resources>
     <string name="app_name">MySecretChat</string>
     <string name="scanned_devices">Найденные устройства</string>
-    <string name="scanning_for_devices">Поиск устройств...</string>
-    <string name="advertising_for_devices">Сообщаем устройствам о готовности к подключению...</string>
+    <string name="scanning_for_devices">Поиск устройств…</string>
+    <string name="advertising_for_devices">Сообщаем устройствам о готовности к подключению…</string>
     <string name="stop_server">Остановить сервер</string>
     <string name="start_server">Запустить сервер</string>
     <string name="stop_scan">Остановить поиск</string>
@@ -12,4 +12,5 @@
     <string name="navigate_back">Вернуться на предыдущий экран</string>
     <string name="type_a_message">Введите сообщение</string>
     <string name="send">Отправить</string>
+    <string name="new_message">Новое сообщение</string>
 </resources>

@@ -12,5 +12,4 @@ sealed class ScannedDevicesEvent {
     data object ToggleAdvertising : ScannedDevicesEvent()
     data object CheckLocationSettings: ScannedDevicesEvent()
     data object CheckBluetoothSettings: ScannedDevicesEvent()
-    data object SubscribeForNotifications: ScannedDevicesEvent()
 }

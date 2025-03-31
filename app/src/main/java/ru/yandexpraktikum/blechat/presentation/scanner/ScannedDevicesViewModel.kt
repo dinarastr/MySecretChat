@@ -12,14 +12,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.yandexpraktikum.blechat.domain.bluetooth.BLEClientController
 import ru.yandexpraktikum.blechat.domain.bluetooth.BLEServerController
-import ru.yandexpraktikum.blechat.presentation.notifications.NotificationsHelper
 import javax.inject.Inject
 
 @HiltViewModel
 class ScannedDevicesViewModel @Inject constructor(
     private val serverController: BLEServerController,
-    private val clientController: BLEClientController,
-    private val notificationsHelper: NotificationsHelper
+    private val clientController: BLEClientController
     ): ViewModel() {
 
     private val _state = MutableStateFlow(ScannedDevicesState())
@@ -83,9 +81,6 @@ class ScannedDevicesViewModel @Inject constructor(
             is ScannedDevicesEvent.CheckBluetoothSettings -> {
                 clientController.updateBluetoothState()
             }
-            is ScannedDevicesEvent.SubscribeForNotifications -> {
-                notificationsHelper.createChannel("Channel", channelId = "channel_id")
-            }
         }
     }
 
@@ -145,3 +140,4 @@ class ScannedDevicesViewModel @Inject constructor(
         private const val ADVERTISE_PERIOD = 15000L
     }
 }
+

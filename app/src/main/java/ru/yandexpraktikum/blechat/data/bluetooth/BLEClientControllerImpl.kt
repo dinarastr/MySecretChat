@@ -22,16 +22,17 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import ru.yandexpraktikum.blechat.R
 import ru.yandexpraktikum.blechat.domain.bluetooth.BLEClientController
 import ru.yandexpraktikum.blechat.domain.model.Message
 import ru.yandexpraktikum.blechat.domain.model.ScannedBluetoothDevice
 import ru.yandexpraktikum.blechat.utils.checkForConnectPermission
 import java.nio.charset.Charset
-import java.util.UUID
 import javax.inject.Inject
 import ru.yandexpraktikum.blechat.presentation.notifications.NotificationsHelper
-
-private const val CHANNEL_ID = "channel_id"
+import ru.yandexpraktikum.blechat.utils.notifyCharUUID
+import ru.yandexpraktikum.blechat.utils.serviceUUID
+import ru.yandexpraktikum.blechat.utils.writeCharUUID
 
 class BLEClientControllerImpl @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -46,10 +47,6 @@ class BLEClientControllerImpl @Inject constructor(
     }
 
     private var currentGatt: BluetoothGatt? = null
-
-    private val serviceUUID = UUID.fromString("0000b81d-0000-1000-8000-00805f9b34fb")
-    private val writeCharUUID = UUID.fromString("7db3e235-3608-41f3-a03c-955fcbd2ea4b")
-    private val notifyCharUUID = UUID.fromString("7db3e235-3608-41f3-a03c-955fcbd2ea4c")
 
     private val _isBluetoothEnabled = MutableStateFlow(false)
     override val isBluetoothEnabled: StateFlow<Boolean>
@@ -214,9 +211,8 @@ class BLEClientControllerImpl @Inject constructor(
         ) {
             if (characteristic.uuid == notifyCharUUID) {
                 val message = String(characteristic.value, Charset.defaultCharset())
-                Log.i("BLE Deptecated", "onCharacteristicChanged: $message")
                 notificationsHelper.notifyOnMessageReceived(
-                    title = "New message",
+                    title = context.getString(R.string.new_message),
                     message = message
                 )
                 viewModelScope.launch {
@@ -245,9 +241,8 @@ class BLEClientControllerImpl @Inject constructor(
         ) {
             if (characteristic.uuid == notifyCharUUID) {
                 val message = String(value, Charset.defaultCharset())
-                Log.i("BLE S", "onCharacteristicChanged: $message")
                 notificationsHelper.notifyOnMessageReceived(
-                    title = "New message",
+                    title = context.getString(R.string.new_message),
                     message = message
                 )
                 viewModelScope.launch {
