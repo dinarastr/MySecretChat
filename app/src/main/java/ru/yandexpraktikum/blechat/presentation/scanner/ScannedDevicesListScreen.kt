@@ -69,8 +69,7 @@ fun ScannedDevicesListScreen(
     val connectLauncher = context.connectLauncher(bluetoothLauncher)
 
     LaunchedEffect(state.isBluetoothEnabled) {
-        if (!state.isBluetoothEnabled && Build.VERSION.SDK_INT in
-            Build.VERSION_CODES.S..Build.VERSION_CODES.S_V2
+        if (!state.isBluetoothEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
         ) {
             connectLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
         } else if (!state.isBluetoothEnabled) {

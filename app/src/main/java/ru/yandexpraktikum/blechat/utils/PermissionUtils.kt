@@ -15,22 +15,17 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.core.app.ActivityCompat
 
-val ALL_BLE_PERMISSIONS = if (Build.VERSION.SDK_INT in Build.VERSION_CODES.S..Build.VERSION_CODES.S_V2) {
+val ALL_BLE_PERMISSIONS = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
     arrayOf(
         Manifest.permission.BLUETOOTH_CONNECT,
         Manifest.permission.BLUETOOTH_SCAN,
     )
-} else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S){
+} else
     arrayOf(
         Manifest.permission.BLUETOOTH_ADMIN,
         Manifest.permission.BLUETOOTH,
         Manifest.permission.ACCESS_FINE_LOCATION
     )
-} else {
-    arrayOf(
-        Manifest.permission.BLUETOOTH_SCAN,
-    )
-}
 
 @Composable
 fun locationLauncher(
