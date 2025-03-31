@@ -18,7 +18,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class BluetoothModule {
+interface BluetoothModule {
 
     companion object {
 
@@ -41,13 +41,13 @@ abstract class BluetoothModule {
 
     @Binds
     @Singleton
-    abstract fun provideServerController(
+    fun provideServerController(
         serverControllerImpl: BLEServerControllerImpl
     ): BLEServerController
 
     @Binds
     @Singleton
-    abstract fun provideClientController(
+    fun provideClientController(
         clientControllerImpl: BLEClientControllerImpl
     ): BLEClientController
 }

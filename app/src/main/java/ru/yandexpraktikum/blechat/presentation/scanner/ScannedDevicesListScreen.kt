@@ -72,8 +72,7 @@ fun ScannedDevicesListScreen(
     val connectLauncher = context.connectLauncher(bluetoothLauncher)
 
     LaunchedEffect(state.isBluetoothEnabled) {
-        if (!state.isBluetoothEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-        ) {
+        if (!state.isBluetoothEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             connectLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
         } else if (!state.isBluetoothEnabled) {
             bluetoothLauncher.launch(
@@ -82,7 +81,9 @@ fun ScannedDevicesListScreen(
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && ActivityCompat.checkSelfPermission(
                 context,
-                Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
             notificationsLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
@@ -108,7 +109,8 @@ fun ScannedDevicesListScreen(
                             device = device,
                             onClick = {
                                 onDeviceClick(device.address, true)
-                            })
+                            }
+                        )
                     }
                 } else {
                     items(state.scannedDevices) { device ->
@@ -179,7 +181,10 @@ fun ScanningButton(
             if (permissionsList.values.all { it }) {
                 onAllNecessaryPermissionGranted()
             } else {
-                Log.e("scanner", "necessary permissions rejected: ${permissionsList.filter { !it.value }}")
+                Log.e(
+                    "scanner",
+                    "necessary permissions rejected: ${permissionsList.filter { !it.value }}"
+                )
             }
         }
 
@@ -205,7 +210,10 @@ fun ScanningButton(
                 locationSettingsLauncher.launch(intent)
             } else {
                 val permissionsToRequest = ALL_BLE_PERMISSIONS.filter {
-                    ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        it
+                    ) != PackageManager.PERMISSION_GRANTED
                 }.toTypedArray()
                 if (permissionsToRequest.isNotEmpty()) {
                     requestPermissionsLauncher.launch(permissionsToRequest)
