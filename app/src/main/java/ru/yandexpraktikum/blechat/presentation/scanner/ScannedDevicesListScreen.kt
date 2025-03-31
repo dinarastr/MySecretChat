@@ -69,7 +69,6 @@ fun ScannedDevicesListScreen(
         }
     }
 
-
     val connectLauncher = context.connectLauncher(bluetoothLauncher)
 
     LaunchedEffect(state.isBluetoothEnabled) {
@@ -151,23 +150,17 @@ fun ScannedDevicesListScreen(
                 },
                 state = state
             )
-            Button(onClick = {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.BLUETOOTH_ADVERTISE
-                    ) != PackageManager.PERMISSION_GRANTED
-                ) {
+            ServerButton(
+                context = context,
+                isAdvertising = state.isAdvertising,
+                requestAdvertisePermission = {
                     advertiseLauncher.launch(Manifest.permission.BLUETOOTH_ADVERTISE)
-                } else {
+                },
+                toggleServer = {
                     viewModel.onEvent(ScannedDevicesEvent.ToggleAdvertising)
                 }
-            }) {
-                Text(
-                    if (state.isAdvertising) stringResource(R.string.stop_server) else stringResource(
-                        R.string.start_server
-                    )
-                )
-            }
+            )
+
         }
     }
 }
@@ -223,5 +216,31 @@ fun ScanningButton(
         }
     ) {
         Text(if (state.isScanning) stringResource(R.string.stop_scan) else stringResource(R.string.scan_for_devices))
+    }
+}
+
+@Composable
+fun ServerButton(
+    context: Context,
+    isAdvertising: Boolean,
+    requestAdvertisePermission: () -> Unit,
+    toggleServer: () -> Unit,
+) {
+    Button(onClick = {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.BLUETOOTH_ADVERTISE
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestAdvertisePermission()
+        } else {
+            toggleServer()
+        }
+    }) {
+        Text(
+            if (isAdvertising) stringResource(R.string.stop_server) else stringResource(
+                R.string.start_server
+            )
+        )
     }
 }
