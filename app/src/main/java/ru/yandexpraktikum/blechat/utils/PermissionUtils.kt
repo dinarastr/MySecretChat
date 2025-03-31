@@ -58,11 +58,14 @@ fun Context.checkForConnectPermission(action: () -> Unit) {
 }
 
 @Composable
-fun Context.bluetoothLauncher(): ManagedActivityResultLauncher<Intent, ActivityResult> {
+fun Context.bluetoothLauncher(
+    updateBluetoothEnabled: () -> Unit
+): ManagedActivityResultLauncher<Intent, ActivityResult> {
     val enableBluetoothLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
+            updateBluetoothEnabled()
             Log.i("scanner", "Bluetooth enabled")
         } else {
             Toast.makeText(this, "Failed to enable Bluetooth", Toast.LENGTH_SHORT).show()
@@ -90,7 +93,7 @@ fun advertiseLauncher(
 
 @Composable
 fun Context.connectLauncher(
-    bluetoothLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>
+    bluetoothLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>,
 ): ManagedActivityResultLauncher<String, Boolean> {
     val connectLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()

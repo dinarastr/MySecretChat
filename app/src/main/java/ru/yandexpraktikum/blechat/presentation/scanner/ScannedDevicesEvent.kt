@@ -11,4 +11,5 @@ sealed class ScannedDevicesEvent {
     data class ConnectToDevice(val device: ScannedBluetoothDevice) : ScannedDevicesEvent()
     data object ToggleAdvertising : ScannedDevicesEvent()
     data object CheckLocationSettings: ScannedDevicesEvent()
+    data object CheckBluetoothSettings: ScannedDevicesEvent()
 }

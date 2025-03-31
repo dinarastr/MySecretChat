@@ -9,6 +9,7 @@ interface BLEClientController {
     val scannedDevices: StateFlow<List<ScannedBluetoothDevice>>
 
     fun updateLocationState()
+    fun updateBluetoothState()
 
     fun startScan()
     fun stopScan()

@@ -81,6 +81,9 @@ class ScannedDevicesViewModel @Inject constructor(
             is ScannedDevicesEvent.CheckLocationSettings -> {
                 clientController.updateLocationState()
             }
+            is ScannedDevicesEvent.CheckBluetoothSettings -> {
+                clientController.updateBluetoothState()
+            }
         }
     }
 

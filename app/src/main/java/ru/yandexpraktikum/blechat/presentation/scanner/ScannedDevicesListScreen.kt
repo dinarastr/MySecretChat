@@ -7,6 +7,9 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,7 +34,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.time.delay
 import ru.yandexpraktikum.blechat.R
 import ru.yandexpraktikum.blechat.domain.model.ScannedBluetoothDevice
 import ru.yandexpraktikum.blechat.utils.ALL_BLE_PERMISSIONS
@@ -51,7 +56,11 @@ fun ScannedDevicesListScreen(
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
 
-    val bluetoothLauncher = context.bluetoothLauncher()
+    val bluetoothLauncher = context.bluetoothLauncher(
+        updateBluetoothEnabled = {
+            viewModel.onEvent(ScannedDevicesEvent.CheckBluetoothSettings)
+        }
+    )
 
     val locationLauncher = locationLauncher(
         state.isLocationEnabled,
@@ -132,14 +141,16 @@ fun ScannedDevicesListScreen(
                 )
             }
 
-            ScanButton(context = context, onPermissionGranted = {
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S && state.isLocationEnabled.not()) {
-                    val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-                    locationLauncher.launch(intent)
-                } else {
+            ScanningComponent(
+                checkLocation = {
+                    viewModel.onEvent(ScannedDevicesEvent.CheckLocationSettings)
+                },
+                context = context,
+                onAllNecessaryPermissionGranted = {
                     viewModel.onEvent(ScannedDevicesEvent.ToggleScan)
-                }
-            }, state = state)
+                },
+                state = state
+            )
             Button(onClick = {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(
                         context,
@@ -159,6 +170,70 @@ fun ScannedDevicesListScreen(
             }
         }
     }
+}
+
+@Composable
+fun ScanningComponent(
+    checkLocation: () -> Unit,
+    context: Context,
+    onAllNecessaryPermissionGranted: () -> Unit,
+    state: ScannedDevicesState
+) {
+    val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+
+    val permissions = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) arrayOf(
+        Manifest.permission.BLUETOOTH_ADMIN,
+        Manifest.permission.BLUETOOTH,
+        Manifest.permission.ACCESS_FINE_LOCATION
+    ) else arrayOf(
+        Manifest.permission.BLUETOOTH_CONNECT,
+        Manifest.permission.BLUETOOTH_SCAN
+    )
+
+    val requestPermissionsLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissionsList ->
+            if (permissionsList.values.all { it }) {
+                onAllNecessaryPermissionGranted()
+            } else {
+                Log.e("scanner", "necessary permissions rejected: ${permissionsList.filter { !it.value }}")
+            }
+        }
+
+    val locationSettingsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) {
+        checkLocation()
+        if (state.isLocationEnabled) {
+            val permissionsToRequest = permissions.filter {
+                ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
+            }.toTypedArray()
+            if (permissionsToRequest.isNotEmpty()) {
+                requestPermissionsLauncher.launch(permissionsToRequest)
+            } else {
+                onAllNecessaryPermissionGranted()
+            }
+        }
+    }
+
+    Button(
+        onClick = {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S && state.isLocationEnabled.not()) {
+                locationSettingsLauncher.launch(intent)
+            } else {
+                val permissionsToRequest = permissions.filter {
+                    ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
+                }.toTypedArray()
+                if (permissionsToRequest.isNotEmpty()) {
+                    requestPermissionsLauncher.launch(permissionsToRequest)
+                } else {
+                    onAllNecessaryPermissionGranted()
+                }
+            }
+        }
+    ) {
+        Text(if (state.isScanning) stringResource(R.string.stop_scan) else stringResource(R.string.scan_for_devices))
+    }
+
 }
 
 @Composable

@@ -56,13 +56,13 @@ class BLEClientControllerImpl @Inject constructor(
         get() = _isLocationEnabled.asStateFlow()
 
     init {
-        initializeBluetoothState()
+        updateBluetoothState()
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
             updateLocationState()
         }
     }
 
-    private fun initializeBluetoothState() {
+    override fun updateBluetoothState() {
         try {
             _isBluetoothEnabled.value = bluetoothAdapter?.isEnabled == true
         } catch (e: Exception) {
