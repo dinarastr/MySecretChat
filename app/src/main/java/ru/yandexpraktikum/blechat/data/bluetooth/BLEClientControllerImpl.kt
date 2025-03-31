@@ -232,36 +232,6 @@ class BLEClientControllerImpl @Inject constructor(
                 }
             }
         }
-
-        @RequiresApi(Build.VERSION_CODES.S)
-        override fun onCharacteristicChanged(
-            gatt: BluetoothGatt,
-            characteristic: BluetoothGattCharacteristic,
-            value: ByteArray
-        ) {
-            if (characteristic.uuid == notifyCharUUID) {
-                val message = String(value, Charset.defaultCharset())
-                notificationsHelper.notifyOnMessageReceived(
-                    title = context.getString(R.string.new_message),
-                    message = message
-                )
-                viewModelScope.launch {
-                    _scannedDevices.update { devices ->
-                        devices.map {
-                            if (it.address == gatt.device.address) {
-                                it.copy(
-                                    messages = it.messages + Message(
-                                        text = message,
-                                        senderAddress = gatt.device.address,
-                                        isFromLocalUser = false
-                                    )
-                                )
-                            } else it
-                        }
-                    }
-                }
-            }
-        }
     }
 
     override fun connectToDevice(device: ScannedBluetoothDevice): Boolean {
