@@ -36,15 +36,12 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import kotlinx.coroutines.time.delay
 import ru.yandexpraktikum.blechat.R
 import ru.yandexpraktikum.blechat.domain.model.ScannedBluetoothDevice
 import ru.yandexpraktikum.blechat.utils.ALL_BLE_PERMISSIONS
 import ru.yandexpraktikum.blechat.utils.advertiseLauncher
 import ru.yandexpraktikum.blechat.utils.bluetoothLauncher
 import ru.yandexpraktikum.blechat.utils.connectLauncher
-import ru.yandexpraktikum.blechat.utils.locationLauncher
-import ru.yandexpraktikum.blechat.utils.scanPermissionsLauncher
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,6 +63,17 @@ fun ScannedDevicesListScreen(
         viewModel.onEvent(ScannedDevicesEvent.ToggleAdvertising)
     }
 
+    val notificationsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) {
+        if (it) {
+            viewModel.onEvent(ScannedDevicesEvent.SubscribeForNotifications)
+        } else {
+            Log.i("Server", "Failed to enable notifications")
+        }
+    }
+
+
     val connectLauncher = context.connectLauncher(bluetoothLauncher)
 
     LaunchedEffect(state.isBluetoothEnabled) {
@@ -76,6 +84,13 @@ fun ScannedDevicesListScreen(
             bluetoothLauncher.launch(
                 Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
             )
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            notificationsLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            viewModel.onEvent(ScannedDevicesEvent.SubscribeForNotifications)
         }
     }
 

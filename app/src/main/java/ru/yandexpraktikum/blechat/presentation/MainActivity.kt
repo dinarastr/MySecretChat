@@ -15,7 +15,7 @@ import ru.yandexpraktikum.blechat.presentation.ui.theme.BleChatTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        //enableEdgeToEdge()
+        enableEdgeToEdge()
         setContent {
             BleChatTheme {
                 Surface(color = MaterialTheme.colorScheme.background) {

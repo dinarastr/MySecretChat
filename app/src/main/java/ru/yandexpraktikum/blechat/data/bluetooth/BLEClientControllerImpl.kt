@@ -29,11 +29,15 @@ import ru.yandexpraktikum.blechat.utils.checkForConnectPermission
 import java.nio.charset.Charset
 import java.util.UUID
 import javax.inject.Inject
+import ru.yandexpraktikum.blechat.presentation.notifications.NotificationsHelper
+
+private const val CHANNEL_ID = "channel_id"
 
 class BLEClientControllerImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val bluetoothAdapter: BluetoothAdapter?,
     private val locationManager: LocationManager,
+    private val notificationsHelper: NotificationsHelper,
     private val viewModelScope: CoroutineScope
 ): BLEClientController {
 
@@ -54,6 +58,7 @@ class BLEClientControllerImpl @Inject constructor(
     private val _isLocationEnabled = MutableStateFlow(false)
     override val isLocationEnabled: StateFlow<Boolean>
         get() = _isLocationEnabled.asStateFlow()
+
 
     init {
         updateBluetoothState()
@@ -209,6 +214,11 @@ class BLEClientControllerImpl @Inject constructor(
         ) {
             if (characteristic.uuid == notifyCharUUID) {
                 val message = String(characteristic.value, Charset.defaultCharset())
+                Log.i("BLE Deptecated", "onCharacteristicChanged: $message")
+                notificationsHelper.notifyOnMessageReceived(
+                    title = "New message",
+                    message = message
+                )
                 viewModelScope.launch {
                     _scannedDevices.update { devices ->
                         devices.map {
@@ -235,6 +245,11 @@ class BLEClientControllerImpl @Inject constructor(
         ) {
             if (characteristic.uuid == notifyCharUUID) {
                 val message = String(value, Charset.defaultCharset())
+                Log.i("BLE S", "onCharacteristicChanged: $message")
+                notificationsHelper.notifyOnMessageReceived(
+                    title = "New message",
+                    message = message
+                )
                 viewModelScope.launch {
                     _scannedDevices.update { devices ->
                         devices.map {
@@ -259,6 +274,7 @@ class BLEClientControllerImpl @Inject constructor(
         val bluetoothDevice = bluetoothAdapter?.getRemoteDevice(device.address)
         context.checkForConnectPermission {
             currentGatt = bluetoothDevice?.connectGatt(context, false, gattCallback)
+
         }
         return currentGatt != null
     }

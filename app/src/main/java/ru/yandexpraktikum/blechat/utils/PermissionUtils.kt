@@ -27,26 +27,6 @@ val ALL_BLE_PERMISSIONS = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         Manifest.permission.ACCESS_FINE_LOCATION
     )
 
-@Composable
-fun locationLauncher(
-    isLocationEnabled: Boolean,
-    onLocationEnabled: () -> Unit,
-    checkLocationSettings: () -> Unit
-): ManagedActivityResultLauncher<Intent, ActivityResult> {
-    val locationSettingsLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) {
-        checkLocationSettings()
-        if (isLocationEnabled) {
-            onLocationEnabled()
-        } else {
-            Log.e("scanner", "Failed to enable location")
-        }
-
-    }
-    return locationSettingsLauncher
-}
-
 fun Context.checkForConnectPermission(action: () -> Unit) {
     when {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && ActivityCompat.checkSelfPermission(
@@ -109,20 +89,5 @@ fun Context.connectLauncher(
     return connectLauncher
 }
 
-@Composable
-fun scanPermissionsLauncher(
-    onPermissionsGranted: () -> Unit
-): ManagedActivityResultLauncher<Array<String>, Map<String, @JvmSuppressWildcards Boolean>> {
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { granted ->
-        if (granted.values.all { it }) {
-            onPermissionsGranted()
-        } else {
-            Log.e("scanner", "necessary permissions rejected")
-        }
-    }
-    return launcher
-}
 
 
