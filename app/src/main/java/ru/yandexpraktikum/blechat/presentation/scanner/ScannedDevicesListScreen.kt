@@ -62,15 +62,6 @@ fun ScannedDevicesListScreen(
         }
     )
 
-    val locationLauncher = locationLauncher(
-        state.isLocationEnabled,
-        onLocationEnabled = {
-            viewModel.onEvent(ScannedDevicesEvent.ToggleScan)
-        }
-    ) {
-        viewModel.onEvent(ScannedDevicesEvent.CheckLocationSettings)
-    }
-
     val advertiseLauncher = advertiseLauncher {
         viewModel.onEvent(ScannedDevicesEvent.ToggleAdvertising)
     }
@@ -141,7 +132,7 @@ fun ScannedDevicesListScreen(
                 )
             }
 
-            ScanningComponent(
+            ScanningButton(
                 checkLocation = {
                     viewModel.onEvent(ScannedDevicesEvent.CheckLocationSettings)
                 },
@@ -173,22 +164,13 @@ fun ScannedDevicesListScreen(
 }
 
 @Composable
-fun ScanningComponent(
+fun ScanningButton(
     checkLocation: () -> Unit,
     context: Context,
     onAllNecessaryPermissionGranted: () -> Unit,
     state: ScannedDevicesState
 ) {
     val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-
-    val permissions = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) arrayOf(
-        Manifest.permission.BLUETOOTH_ADMIN,
-        Manifest.permission.BLUETOOTH,
-        Manifest.permission.ACCESS_FINE_LOCATION
-    ) else arrayOf(
-        Manifest.permission.BLUETOOTH_CONNECT,
-        Manifest.permission.BLUETOOTH_SCAN
-    )
 
     val requestPermissionsLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissionsList ->
@@ -204,7 +186,7 @@ fun ScanningComponent(
     ) {
         checkLocation()
         if (state.isLocationEnabled) {
-            val permissionsToRequest = permissions.filter {
+            val permissionsToRequest = ALL_BLE_PERMISSIONS.filter {
                 ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
             }.toTypedArray()
             if (permissionsToRequest.isNotEmpty()) {
@@ -220,7 +202,7 @@ fun ScanningComponent(
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S && state.isLocationEnabled.not()) {
                 locationSettingsLauncher.launch(intent)
             } else {
-                val permissionsToRequest = permissions.filter {
+                val permissionsToRequest = ALL_BLE_PERMISSIONS.filter {
                     ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
                 }.toTypedArray()
                 if (permissionsToRequest.isNotEmpty()) {
@@ -234,29 +216,6 @@ fun ScanningComponent(
         Text(if (state.isScanning) stringResource(R.string.stop_scan) else stringResource(R.string.scan_for_devices))
     }
 
-}
-
-@Composable
-fun ScanButton(context: Context, onPermissionGranted: () -> Unit, state: ScannedDevicesState) {
-    val launcher = scanPermissionsLauncher {
-        onPermissionGranted()
-    }
-
-    Button(onClick = {
-        if (ALL_BLE_PERMISSIONS.any {
-                ActivityCompat.checkSelfPermission(
-                    context,
-                    it
-                ) != PackageManager.PERMISSION_GRANTED
-            }) {
-            launcher.launch(ALL_BLE_PERMISSIONS)
-        } else {
-            onPermissionGranted()
-        }
-
-    }) {
-        Text(if (state.isScanning) stringResource(R.string.stop_scan) else stringResource(R.string.scan_for_devices))
-    }
 }
 
 @Composable
