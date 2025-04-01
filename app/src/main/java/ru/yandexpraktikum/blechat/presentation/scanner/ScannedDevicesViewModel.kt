@@ -111,7 +111,10 @@ class ScannedDevicesViewModel @Inject constructor(
             try {
                 serverController.startServer()
                 delay(ADVERTISE_PERIOD)
-                if (_state.value.isAdvertising) {
+                if (_state.value.isAdvertising && serverController.connectedDevices.value.isEmpty()) {
+                    _state.update { it.copy(isAdvertising = false) }
+                    serverController.stopServer()
+                } else if (_state.value.isAdvertising){
                     _state.update { it.copy(isAdvertising = false) }
                     serverController.stopAdvertising()
                 }

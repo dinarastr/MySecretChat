@@ -1,6 +1,5 @@
 package ru.yandexpraktikum.blechat.presentation.notifications
 
-import android.annotation.SuppressLint
 import android.content.Context
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -17,7 +16,6 @@ class NotificationsHelperImpl
     private val notificationManager: NotificationManagerCompat,
 ): NotificationsHelper {
 
-    @SuppressLint("MissingPermission")
     override fun notifyOnMessageReceived(title: String, message: String) {
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setContentTitle(title)
