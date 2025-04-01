@@ -194,9 +194,7 @@ class BLEClientControllerImpl @Inject constructor(
                 val service = gatt?.getService(serviceUUID)
                 val notifyCharacteristic = service?.getCharacteristic(notifyCharUUID)
                 if (notifyCharacteristic != null) {
-                    context.checkForConnectPermission {
-                        gatt.setCharacteristicNotification(notifyCharacteristic, true)
-                    }
+                    gatt.setCharacteristicNotification(notifyCharacteristic, true)
                 }
             }
         }
