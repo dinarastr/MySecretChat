@@ -166,9 +166,7 @@ class BLEClientControllerImpl @Inject constructor(
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 when (newState) {
                     BluetoothProfile.STATE_CONNECTED -> {
-                        context.checkForConnectPermission {
-                            gatt.discoverServices()
-                        }
+                        gatt.discoverServices()
                         _scannedDevices.update { devices ->
                             devices.map {
                                 if (it.address == gatt.device.address) {
@@ -197,9 +195,7 @@ class BLEClientControllerImpl @Inject constructor(
                 val service = gatt?.getService(serviceUUID)
                 val notifyCharacteristic = service?.getCharacteristic(notifyCharUUID)
                 if (notifyCharacteristic != null) {
-                    context.checkForConnectPermission {
-                        gatt.setCharacteristicNotification(notifyCharacteristic, true)
-                    }
+                    gatt.setCharacteristicNotification(notifyCharacteristic, true)
                 }
             }
         }
@@ -232,45 +228,11 @@ class BLEClientControllerImpl @Inject constructor(
                 }
             }
         }
-
-        @RequiresApi(Build.VERSION_CODES.S)
-        override fun onCharacteristicChanged(
-            gatt: BluetoothGatt,
-            characteristic: BluetoothGattCharacteristic,
-            value: ByteArray
-        ) {
-            if (characteristic.uuid == notifyCharUUID) {
-                val message = String(value, Charset.defaultCharset())
-                notificationsHelper.notifyOnMessageReceived(
-                    title = context.getString(R.string.new_message),
-                    message = message
-                )
-                viewModelScope.launch {
-                    _scannedDevices.update { devices ->
-                        devices.map {
-                            if (it.address == gatt.device.address) {
-                                it.copy(
-                                    messages = it.messages + Message(
-                                        text = message,
-                                        senderAddress = gatt.device.address,
-                                        isFromLocalUser = false
-                                    )
-                                )
-                            } else it
-                        }
-                    }
-                }
-            }
-        }
     }
 
     override fun connectToDevice(device: ScannedBluetoothDevice): Boolean {
-
         val bluetoothDevice = bluetoothAdapter?.getRemoteDevice(device.address)
-        context.checkForConnectPermission {
-            currentGatt = bluetoothDevice?.connectGatt(context, false, gattCallback)
-
-        }
+        currentGatt = bluetoothDevice?.connectGatt(context, false, gattCallback)
         return currentGatt != null
     }
 
@@ -280,9 +242,7 @@ class BLEClientControllerImpl @Inject constructor(
 
         return if (characteristic != null) {
             characteristic.setValue(message.toByteArray(Charset.defaultCharset()))
-            context.checkForConnectPermission {
-                currentGatt?.writeCharacteristic(characteristic)
-            }
+            currentGatt?.writeCharacteristic(characteristic)
             _scannedDevices.update { devices ->
                 devices.map {
                     if (it.address == deviceAddress) {
@@ -301,9 +261,7 @@ class BLEClientControllerImpl @Inject constructor(
     }
 
     override fun closeConnection() {
-        context.checkForConnectPermission {
-            currentGatt?.close()
-        }
+        currentGatt?.close()
         currentGatt = null
     }
 

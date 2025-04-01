@@ -1,9 +1,7 @@
 package ru.yandexpraktikum.blechat.presentation.notifications
 
 import android.annotation.SuppressLint
-import android.app.NotificationManager
 import android.content.Context
-import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
