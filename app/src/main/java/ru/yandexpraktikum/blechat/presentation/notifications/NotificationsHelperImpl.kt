@@ -1,6 +1,5 @@
 package ru.yandexpraktikum.blechat.presentation.notifications
 
-import android.annotation.SuppressLint
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -11,10 +10,10 @@ private const val NOTIFICATION_ID = 1234
 class NotificationsHelperImpl
 @Inject constructor(
     @ApplicationContext private val context: Context,
-): NotificationsHelper {
 
-    @SuppressLint("MissingPermission")
+) : NotificationsHelper {
+
     override fun notifyOnMessageReceived(title: String, message: String) {
-        TODO()
+            TODO()
     }
 }
