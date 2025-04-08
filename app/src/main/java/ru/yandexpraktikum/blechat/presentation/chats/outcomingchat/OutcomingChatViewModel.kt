@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import ru.yandexpraktikum.blechat.domain.bluetooth.BLEClientController
+import ru.yandexpraktikum.blechat.domain.bluetooth.BleClientController
 import ru.yandexpraktikum.blechat.domain.model.Message
 import ru.yandexpraktikum.blechat.presentation.chats.ChatEvent
 import ru.yandexpraktikum.blechat.presentation.chats.ChatState
@@ -16,7 +16,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class OutcomingChatViewModel @Inject constructor(
-    private val clientController: BLEClientController
+    private val clientController: BleClientController
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ChatState())

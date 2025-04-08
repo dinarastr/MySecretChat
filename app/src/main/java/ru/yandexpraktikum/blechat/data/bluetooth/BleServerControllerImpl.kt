@@ -26,7 +26,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import ru.yandexpraktikum.blechat.domain.bluetooth.BLEServerController
+import ru.yandexpraktikum.blechat.domain.bluetooth.BleServerController
 import ru.yandexpraktikum.blechat.domain.model.Message
 import ru.yandexpraktikum.blechat.domain.model.ScannedBluetoothDevice
 import ru.yandexpraktikum.blechat.utils.checkForConnectPermission
@@ -37,12 +37,12 @@ import java.nio.charset.Charset
 import java.util.UUID
 import javax.inject.Inject
 
-class BLEServerControllerImpl @Inject constructor(
+class BleServerControllerImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val bluetoothManager: BluetoothManager?,
     private val bluetoothAdapter: BluetoothAdapter?,
     private val viewModelScope: CoroutineScope
-): BLEServerController {
+): BleServerController {
 
     private val CLIENT_CONFIG_DESCRIPTOR = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
 

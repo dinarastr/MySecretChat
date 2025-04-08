@@ -22,8 +22,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.yandexpraktikum.blechat.R
-import ru.yandexpraktikum.blechat.domain.bluetooth.BLEClientController
-import ru.yandexpraktikum.blechat.domain.model.Message
+import ru.yandexpraktikum.blechat.domain.bluetooth.BleClientController
 import ru.yandexpraktikum.blechat.domain.model.ScannedBluetoothDevice
 import ru.yandexpraktikum.blechat.utils.checkForConnectPermission
 import java.nio.charset.Charset
@@ -33,13 +32,13 @@ import ru.yandexpraktikum.blechat.utils.notifyCharUUID
 import ru.yandexpraktikum.blechat.utils.serviceUUID
 import ru.yandexpraktikum.blechat.utils.writeCharUUID
 
-class BLEClientControllerImpl @Inject constructor(
+class BleClientControllerImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val bluetoothAdapter: BluetoothAdapter?,
     private val locationManager: LocationManager,
     private val notificationsHelper: NotificationsHelper,
     private val viewModelScope: CoroutineScope
-): BLEClientController {
+): BleClientController {
 
     private val bleScanner by lazy {
         bluetoothAdapter?.bluetoothLeScanner
@@ -161,6 +160,7 @@ class BLEClientControllerImpl @Inject constructor(
     }
 
     private val gattCallback = object : BluetoothGattCallback() {
+        @Suppress("MissingPermission")
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 when (newState) {
@@ -189,6 +189,7 @@ class BLEClientControllerImpl @Inject constructor(
             }
         }
 
+        @Suppress("MissingPermission")
         override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 val service = gatt?.getService(serviceUUID)
@@ -212,16 +213,13 @@ class BLEClientControllerImpl @Inject constructor(
                 )
                 viewModelScope.launch {
                     _scannedDevices.update { devices ->
-                        devices.map {
-                            if (it.address == gatt.device.address) {
-                                it.copy(
-                                    messages = it.messages + Message(
-                                        text = message,
-                                        senderAddress = gatt.device.address,
-                                        isFromLocalUser = false
-                                    )
+                        devices.map { device ->
+                            if (device.address == gatt.device.address) {
+                                device.addRemoteMessage(
+                                    text = message,
+                                    senderAddress = gatt.device.address
                                 )
-                            } else it
+                            } else device
                         }
                     }
                 }
@@ -229,6 +227,7 @@ class BLEClientControllerImpl @Inject constructor(
         }
     }
 
+    @Suppress("MissingPermission")
     override fun connectToDevice(device: ScannedBluetoothDevice): Boolean {
         val bluetoothDevice = bluetoothAdapter?.getRemoteDevice(device.address)
         currentGatt = bluetoothDevice?.connectGatt(context, false, gattCallback)
@@ -239,26 +238,25 @@ class BLEClientControllerImpl @Inject constructor(
         val gattService = currentGatt?.getService(serviceUUID)
         val characteristic = gattService?.getCharacteristic(writeCharUUID)
 
+        @Suppress("MissingPermission")
         return if (characteristic != null) {
             characteristic.setValue(message.toByteArray(Charset.defaultCharset()))
             currentGatt?.writeCharacteristic(characteristic)
             _scannedDevices.update { devices ->
-                devices.map {
-                    if (it.address == deviceAddress) {
-                        it.copy(
-                            messages = it.messages + Message(
-                                text = message,
-                                senderAddress = bluetoothAdapter?.address ?: "",
-                                isFromLocalUser = true
-                            )
+                devices.map { device ->
+                    if (device.address == deviceAddress) {
+                        device.addLocalMessage(
+                            text = message,
+                            localAddress = bluetoothAdapter?.address
                         )
-                    } else it
+                    } else device
                 }
             }
             true
         } else false
     }
 
+    @Suppress("MissingPermission")
     override fun closeConnection() {
         currentGatt?.close()
         currentGatt = null

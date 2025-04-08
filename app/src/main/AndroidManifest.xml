@@ -30,7 +30,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:name=".BLEChat"
+        android:name=".BleChat"
         android:theme="@style/Theme.MySecretChat"
         tools:targetApi="31">
         <activity

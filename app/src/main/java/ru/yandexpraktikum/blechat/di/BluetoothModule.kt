@@ -10,10 +10,10 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import ru.yandexpraktikum.blechat.data.bluetooth.BLEClientControllerImpl
-import ru.yandexpraktikum.blechat.data.bluetooth.BLEServerControllerImpl
-import ru.yandexpraktikum.blechat.domain.bluetooth.BLEClientController
-import ru.yandexpraktikum.blechat.domain.bluetooth.BLEServerController
+import ru.yandexpraktikum.blechat.data.bluetooth.BleClientControllerImpl
+import ru.yandexpraktikum.blechat.data.bluetooth.BleServerControllerImpl
+import ru.yandexpraktikum.blechat.domain.bluetooth.BleClientController
+import ru.yandexpraktikum.blechat.domain.bluetooth.BleServerController
 import javax.inject.Singleton
 
 @Module
@@ -42,12 +42,12 @@ interface BluetoothModule {
     @Binds
     @Singleton
     fun provideServerController(
-        serverControllerImpl: BLEServerControllerImpl
-    ): BLEServerController
+        serverControllerImpl: BleServerControllerImpl
+    ): BleServerController
 
     @Binds
     @Singleton
     fun provideClientController(
-        clientControllerImpl: BLEClientControllerImpl
-    ): BLEClientController
+        clientControllerImpl: BleClientControllerImpl
+    ): BleClientController
 }

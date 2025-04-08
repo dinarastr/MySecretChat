@@ -10,14 +10,14 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import ru.yandexpraktikum.blechat.domain.bluetooth.BLEClientController
-import ru.yandexpraktikum.blechat.domain.bluetooth.BLEServerController
+import ru.yandexpraktikum.blechat.domain.bluetooth.BleClientController
+import ru.yandexpraktikum.blechat.domain.bluetooth.BleServerController
 import javax.inject.Inject
 
 @HiltViewModel
 class ScannedDevicesViewModel @Inject constructor(
-    private val serverController: BLEServerController,
-    private val clientController: BLEClientController
+    private val serverController: BleServerController,
+    private val clientController: BleClientController
     ): ViewModel() {
 
     private val _state = MutableStateFlow(ScannedDevicesState())

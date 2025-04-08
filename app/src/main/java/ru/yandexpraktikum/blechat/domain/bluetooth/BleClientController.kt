@@ -3,7 +3,7 @@ package ru.yandexpraktikum.blechat.domain.bluetooth
 import kotlinx.coroutines.flow.StateFlow
 import ru.yandexpraktikum.blechat.domain.model.ScannedBluetoothDevice
 
-interface BLEClientController {
+interface BleClientController {
     val isBluetoothEnabled: StateFlow<Boolean>
     val isLocationEnabled: StateFlow<Boolean>
     val scannedDevices: StateFlow<List<ScannedBluetoothDevice>>
