@@ -160,12 +160,13 @@ class BleClientControllerImpl @Inject constructor(
     }
 
     private val gattCallback = object : BluetoothGattCallback() {
-        @Suppress("MissingPermission")
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 when (newState) {
                     BluetoothProfile.STATE_CONNECTED -> {
-                        gatt.discoverServices()
+                        context.checkForConnectPermission {
+                            gatt.discoverServices()
+                        }
                         _scannedDevices.update { devices ->
                             devices.map {
                                 if (it.address == gatt.device.address) {
@@ -189,13 +190,14 @@ class BleClientControllerImpl @Inject constructor(
             }
         }
 
-        @Suppress("MissingPermission")
         override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 val service = gatt?.getService(serviceUUID)
                 val notifyCharacteristic = service?.getCharacteristic(notifyCharUUID)
                 if (notifyCharacteristic != null) {
-                    gatt.setCharacteristicNotification(notifyCharacteristic, true)
+                    context.checkForConnectPermission {
+                        gatt.setCharacteristicNotification(notifyCharacteristic, true)
+                    }
                 }
             }
         }
@@ -227,10 +229,11 @@ class BleClientControllerImpl @Inject constructor(
         }
     }
 
-    @Suppress("MissingPermission")
     override fun connectToDevice(device: ScannedBluetoothDevice): Boolean {
         val bluetoothDevice = bluetoothAdapter?.getRemoteDevice(device.address)
-        currentGatt = bluetoothDevice?.connectGatt(context, false, gattCallback)
+        context.checkForConnectPermission {
+            currentGatt = bluetoothDevice?.connectGatt(context, false, gattCallback)
+        }
         return currentGatt != null
     }
 
@@ -238,10 +241,11 @@ class BleClientControllerImpl @Inject constructor(
         val gattService = currentGatt?.getService(serviceUUID)
         val characteristic = gattService?.getCharacteristic(writeCharUUID)
 
-        @Suppress("MissingPermission")
         return if (characteristic != null) {
             characteristic.setValue(message.toByteArray(Charset.defaultCharset()))
-            currentGatt?.writeCharacteristic(characteristic)
+            context.checkForConnectPermission {
+                currentGatt?.writeCharacteristic(characteristic)
+            }
             _scannedDevices.update { devices ->
                 devices.map { device ->
                     if (device.address == deviceAddress) {
@@ -256,9 +260,10 @@ class BleClientControllerImpl @Inject constructor(
         } else false
     }
 
-    @Suppress("MissingPermission")
     override fun closeConnection() {
-        currentGatt?.close()
+        context.checkForConnectPermission {
+            currentGatt?.close()
+        }
         currentGatt = null
     }
 
